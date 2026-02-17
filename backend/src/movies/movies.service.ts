@@ -1,43 +1,71 @@
 import { Injectable } from '@nestjs/common';
-import { MediaItem } from 'src/shared/interfaces/media-item.interface';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
+import { firstValueFrom } from 'rxjs';
+import { MediaItem } from '../shared/interfaces/media-item.interface';
+
+interface TmdbMovie {
+  id: number;
+  title: string;
+  poster_path: string;
+  backdrop_path: string;
+  release_date: string;
+  vote_average: number;
+}
+
+interface TmdbResponse {
+  results: TmdbMovie[];
+}
 
 @Injectable()
 export class MoviesService {
-  findAll(): MediaItem[] {
-    return [
-      {
-        id: 550,
-        source: 'TMDB',
-        slug: 'clube-da-luta',
-        title: 'Clube da Luta',
-        posterUrl:
-          'https://image.tmdb.org/t/p/original/pB8BM7pdSp6B6Ih7Qf4n6a8MUBp.jpg',
-        backdropUrl:
-          'https://image.tmdb.org/t/p/original/hZkgoQYus5vegHoetLkCJzb17zJ.jpg',
-        type: 'MOVIE',
-        releaseDate: '1999-10-15',
-        genres: ['Drama'],
-        status: 'RELEASED',
-        rating: 8.4,
-        extent: { value: 139, unit: 'MINUTES' },
-      },
-      {
-        id: 157336,
-        source: 'TMDB',
-        slug: 'interestelar',
-        title: 'Interestelar',
-        posterUrl:
-          'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        backdropUrl:
-          'https://image.tmdb.org/t/p/original/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg',
-        type: 'MOVIE',
-        releaseDate: '2014-11-05',
-        genres: ['Ficção Científica', 'Drama', 'Aventura'],
-        status: 'RELEASED',
-        rating: 8.4,
-        extent: { value: 169, unit: 'MINUTES' },
-      },
-    ];
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  async findAll(): Promise<MediaItem[]> {
+    const apiKey = this.configService.get<string>('TMDB_API_KEY');
+    const apiUrl = this.configService.get<string>('TMDB_API_URL');
+
+    const { data } = await firstValueFrom(
+      this.httpService.get<TmdbResponse>(`${apiUrl}/movie/popular`, {
+        params: {
+          api_key: apiKey,
+          language: 'pt-BR',
+        },
+      }),
+    );
+
+    const movies: MediaItem[] = data.results.map((item) => ({
+      id: item.id,
+      source: 'TMDB',
+      type: 'MOVIE',
+      title: item.title,
+      slug: this.slugify(item.title),
+      posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+      backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
+      releaseDate: item.release_date,
+      genres: [],
+      status: 'RELEASED',
+      rating: item.vote_average,
+      extent: { value: 0, unit: 'MINUTES' },
+    }));
+
+    return movies;
+  }
+
+  private slugify(text: string): string {
+    return text
+      .toString()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
+      .replace(/--+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
   }
 
   findOne(id: number) {
