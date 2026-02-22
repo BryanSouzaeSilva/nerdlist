@@ -5,6 +5,7 @@ import {
   Body,
   // Patch,
   Param,
+  Query,
   // Delete,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
@@ -25,9 +26,14 @@ export class MoviesController {
     return this.moviesService.findAll();
   }
 
+  @Get('series')
+  findAllSeries() {
+    return this.moviesService.findAllSeries();
+  }
+
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.moviesService.findOne(+id);
+  findOne(@Param('id') id: string, @Query('type') type: string) {
+    return this.moviesService.findOne(+id, type);
   }
 
   // @Patch(':id')

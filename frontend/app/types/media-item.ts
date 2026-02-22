@@ -4,7 +4,7 @@ export interface MediaItem {
     slug: string;
     title: string;
     posterUrl: string;
-    backgroundUrl?: string;
+    backdropUrl?: string;
     type: 'MOVIE' | 'GAME' | 'ANIME' | 'MANGA' | 'SERIES';
     releaseDate: string;
     genres: string[];
@@ -14,4 +14,5 @@ export interface MediaItem {
         unit: 'MINUTES' | 'EPISODES' | 'CHAPTERS' | 'HOURS';
     };
     rating?: number;
+    synopsis?: string;
 }
