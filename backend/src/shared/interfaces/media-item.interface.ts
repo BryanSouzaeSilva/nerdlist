@@ -9,7 +9,7 @@ export interface MediaItem {
   releaseDate: string;
   genres: string[];
   status: 'RELEASED' | 'ONGOING' | 'UPGOING' | 'HIATUS' | 'CANCELED';
-  extent?: {
+  extend?: {
     value: number;
     unit: 'MINUTES' | 'EPISODES' | 'CHAPTERS' | 'HOURS';
   };

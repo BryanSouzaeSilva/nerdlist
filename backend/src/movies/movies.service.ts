@@ -14,6 +14,9 @@ interface TmdbMovie {
   first_air_date?: string;
   vote_average: number;
   overview: string;
+  genres?: { id: number; name: string }[];
+  runtime?: number;
+  number_of_episodes?: number;
 }
 
 interface TmdbResponse {
@@ -44,7 +47,7 @@ export class MoviesService {
       id: item.id,
       source: 'TMDB',
       type: 'MOVIE',
-      title: item.title || item.name || 'Título Desconecido',
+      title: item.title || item.name || 'Título Desconhecido',
       slug: this.slugify(item.title || item.name || 'title'),
       posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
       backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
@@ -52,7 +55,7 @@ export class MoviesService {
       genres: [],
       status: 'RELEASED',
       rating: item.vote_average,
-      extent: { value: 0, unit: 'MINUTES' },
+      extend: { value: 0, unit: 'MINUTES' },
       synopsis: item.overview,
     }));
 
@@ -76,7 +79,7 @@ export class MoviesService {
       id: item.id,
       source: 'TMDB',
       type: 'SERIES',
-      title: item.title || item.name || 'Título Desconecido',
+      title: item.title || item.name || 'Título Desconhecido',
       slug: this.slugify(item.name || 'title'),
       posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
       backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
@@ -84,7 +87,7 @@ export class MoviesService {
       genres: [],
       status: 'RELEASED',
       rating: item.vote_average,
-      extent: { value: 0, unit: 'EPISODES' },
+      extend: { value: 0, unit: 'EPISODES' },
       synopsis: item.overview,
     }));
   }
@@ -109,15 +112,24 @@ export class MoviesService {
         id: data.id,
         source: 'TMDB',
         type: type === 'SERIES' ? 'SERIES' : 'MOVIE',
-        title: data.title || data.name || 'Título Desconecido',
+        title: data.title || data.name || 'Título Desconhecido',
         slug: this.slugify(data.title || data.name || 'title'),
         posterUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}`,
         backdropUrl: `https://image.tmdb.org/t/p/original${data.backdrop_path}`,
         releaseDate: data.release_date || data.first_air_date || '',
-        genres: [],
+        genres: data.genres
+          ? data.genres.map((g: { id: number; name: string }) => g.name)
+          : [],
         status: 'RELEASED',
         rating: data.vote_average,
-        extent: { value: 0, unit: type === 'SERIES' ? 'EPISODES' : 'MINUTES' },
+        extend: {
+          value:
+            type === 'SERIES'
+              ? data.number_of_episodes || 0
+              : data.runtime || 0,
+          unit: type === 'SERIES' ? 'EPISODES' : 'MINUTES',
+        },
+
         synopsis: data.overview,
       };
     } catch {
