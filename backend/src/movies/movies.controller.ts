@@ -32,6 +32,21 @@ export class MoviesController {
     return this.moviesService.findAllSeries();
   }
 
+  @Get('games')
+  findAllGames() {
+    return this.moviesService.findAllGames();
+  }
+
+  @Get('top-rated')
+  findTopRated() {
+    return this.moviesService.findTopRated();
+  }
+
+  @Get('upcoming')
+  findUpComing() {
+    return this.moviesService.findUpComing();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Query('type') type: string) {
     return this.moviesService.findOne(+id, type);

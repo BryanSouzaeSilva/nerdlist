@@ -4,8 +4,16 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'image.tmdb.org', // Autorizando o domínio das imagens
+        protocol: "https",
+        hostname: "image.tmdb.org",
+        port: "",
+        pathname: "/**", // Permite qualquer imagem do TMDB
+      },
+      {
+        protocol: "https",
+        hostname: "media.rawg.io",
+        port: "",
+        pathname: "/**", // Permite qualquer imagem do RAWG
       },
     ],
   },

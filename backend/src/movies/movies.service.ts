@@ -23,6 +23,23 @@ interface TmdbResponse {
   results: TmdbMovie[];
 }
 
+interface RawgGame {
+  id: number;
+  name: string;
+  background_image: string;
+  background_image_additional?: string;
+  released: string;
+  rating: number;
+  playtime: number;
+  description_raw?: string;
+  description?: string;
+  genres?: { id: number; name: string }[];
+}
+
+interface RawgResponse {
+  results: RawgGame[];
+}
+
 @Injectable()
 export class MoviesService {
   constructor(
@@ -92,10 +109,79 @@ export class MoviesService {
     }));
   }
 
+  async findAllGames(): Promise<MediaItem[]> {
+    const apiKey = this.configService.get<string>('RAWG_API_KEY');
+    const apiUrl = this.configService.get<string>('RAWG_API_URL');
+
+    const { data } = await firstValueFrom(
+      this.httpService.get<RawgResponse>(`${apiUrl}/games`, {
+        params: {
+          key: apiKey,
+          ordering: '-added',
+          page_size: 20,
+        },
+      }),
+    );
+
+    return data.results.map((item) => ({
+      id: item.id,
+      source: 'RAWG',
+      type: 'GAME',
+      title: item.name || 'Título Desconecido',
+      slug: this.slugify(item.name || 'title'),
+      posterUrl: item.background_image || '',
+      backdropUrl: item.background_image || '',
+      releaseDate: item.released || '',
+      genres: item.genres
+        ? item.genres.map((g: { id: number; name: string }) => g.name)
+        : [],
+      status: 'RELEASED',
+      rating: item.rating ? item.rating * 2 : 0,
+      extend: { value: item.playtime || 0, unit: 'HOURS' },
+      synopsis: 'Sinopse completa disponível na página de detalhes',
+    }));
+  }
+
   async findOne(id: number, type: string): Promise<MediaItem> {
+    if (type === 'GAME') {
+      const apiKey = this.configService.get<string>('RAWG_API_KEY');
+      const apiUrl = this.configService.get<string>('RAWG_API_URL');
+
+      try {
+        const { data } = await firstValueFrom(
+          this.httpService.get<RawgGame>(`${apiUrl}/games/${id}`, {
+            params: { key: apiKey },
+          }),
+        );
+
+        return {
+          id: data.id,
+          source: 'RAWG',
+          type: 'GAME',
+          title: data.name || 'Título Desconhecido',
+          slug: this.slugify(data.name || 'title'),
+          posterUrl: data.background_image || '',
+          backdropUrl:
+            data.background_image_additional || data.background_image || '',
+          releaseDate: data.released || '',
+          genres: data.genres
+            ? data.genres.map((g: { id: number; name: string }) => g.name)
+            : [],
+          status: 'RELEASED',
+          rating: data.rating ? data.rating * 2 : 0,
+          extend: { value: data.playtime || 0, unit: 'HOURS' },
+          synopsis:
+            data.description_raw ||
+            data.description ||
+            'Sinopse não disponível.',
+        };
+      } catch {
+        throw new NotFoundException(`Jogo com ID ${id} não encontrado`);
+      }
+    }
+
     const apiKey = this.configService.get<string>('TMDB_API_KEY');
     const apiUrl = this.configService.get<string>('TMDB_API_URL');
-
     const resourceType = type === 'SERIES' ? 'tv' : 'movie';
 
     try {
@@ -129,7 +215,6 @@ export class MoviesService {
               : data.runtime || 0,
           unit: type === 'SERIES' ? 'EPISODES' : 'MINUTES',
         },
-
         synopsis: data.overview,
       };
     } catch {
@@ -137,6 +222,60 @@ export class MoviesService {
         `Item com ID ${id} e tipo ${type} não encontrado`,
       );
     }
+  }
+
+  async findTopRated(): Promise<MediaItem[]> {
+    const apiKey = this.configService.get<string>('TMDB_API_KEY');
+    const apiUrl = this.configService.get<string>('TMDB_API_URL');
+
+    const { data } = await firstValueFrom(
+      this.httpService.get<TmdbResponse>(`${apiUrl}/movie/top_rated`, {
+        params: { api_key: apiKey, language: 'pt-BR' },
+      }),
+    );
+
+    return data.results.map((item) => ({
+      id: item.id,
+      source: 'TMDB',
+      type: 'MOVIE',
+      title: item.title || item.name || 'Título Desconhecido',
+      slug: this.slugify(item.title || item.name || 'title'),
+      posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+      backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
+      releaseDate: item.release_date || '',
+      genres: [],
+      status: 'RELEASED',
+      rating: item.vote_average,
+      extend: { value: 0, unit: 'MINUTES' },
+      synopsis: item.overview,
+    }));
+  }
+
+  async findUpComing(): Promise<MediaItem[]> {
+    const apiKey = this.configService.get<string>('TMDB_API_KEY');
+    const apiUrl = this.configService.get<string>('TMDB_API_URL');
+
+    const { data } = await firstValueFrom(
+      this.httpService.get<TmdbResponse>(`${apiUrl}/movie/upcoming`, {
+        params: { api_key: apiKey, language: 'pt-BR' },
+      }),
+    );
+
+    return data.results.map((item) => ({
+      id: item.id,
+      source: 'TMDB',
+      type: 'MOVIE',
+      title: item.title || item.name || 'Título Desconhecido',
+      slug: this.slugify(item.title || item.name || 'title'),
+      posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+      backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
+      releaseDate: item.release_date || '',
+      genres: [],
+      status: 'RELEASED',
+      rating: item.vote_average,
+      extend: { value: 0, unit: 'MINUTES' },
+      synopsis: item.overview,
+    }));
   }
 
   private slugify(text: string): string {
