@@ -1,26 +1,9 @@
-import {
-  Controller,
-  Get,
-  // Post,
-  Body,
-  // Patch,
-  Param,
-  Query,
-  // Delete,
-} from '@nestjs/common';
-
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { MoviesService } from './movies.service';
-// import { CreateMovieDto } from './dto/create-movie.dto';
-// import { UpdateMovieDto } from './dto/update-movie.dto';
 
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
-
-  // @Post()
-  // create(@Body() createMovieDto: CreateMovieDto) {
-  //   return this.moviesService.create(createMovieDto);
-  // }
 
   @Get()
   findAll() {
@@ -30,11 +13,6 @@ export class MoviesController {
   @Get('series')
   findAllSeries() {
     return this.moviesService.findAllSeries();
-  }
-
-  @Get('games')
-  findAllGames() {
-    return this.moviesService.findAllGames();
   }
 
   @Get('top-rated')
@@ -47,18 +25,28 @@ export class MoviesController {
     return this.moviesService.findUpComing();
   }
 
+  @Get('games')
+  findAllGames() {
+    return this.moviesService.findAllGames();
+  }
+
+  @Get('animes')
+  findAllAnimes() {
+    return this.moviesService.findAllAnimes();
+  }
+
+  @Get('mangas')
+  findAllMangas() {
+    return this.moviesService.findAllMangas();
+  }
+
+  @Get('search')
+  search(@Query('q') q: string, @Query('type') type?: string) {
+    return this.moviesService.search(q, type);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string, @Query('type') type: string) {
     return this.moviesService.findOne(+id, type);
   }
-
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateMovieDto: UpdateMovieDto) {
-  //   return this.moviesService.update(+id, updateMovieDto);
-  // }
-
-  // @Delete(':id')
-  // remove(@Param('id') id: string) {
-  //   return this.moviesService.remove(+id);
-  // }
 }

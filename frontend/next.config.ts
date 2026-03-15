@@ -1,3 +1,4 @@
+// next.config.ts
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
@@ -6,14 +7,22 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "image.tmdb.org",
-        port: "",
-        pathname: "/**", // Permite qualquer imagem do TMDB
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "media.rawg.io",
-        port: "",
-        pathname: "/**", // Permite qualquer imagem do RAWG
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "myanimelist.net",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.myanimelist.net",
+        pathname: "/**",
       },
     ],
   },

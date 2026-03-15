@@ -1,13 +1,16 @@
-import { getGames, getMovies, getSeries, getTopRatedMovies, getUpComingMovies } from "./services/api";
+import { getGames, getMovies, getSeries, getTopRatedMovies, getUpComingMovies, getAnimes, getMangas } from "./services/api";
 import MediaCarousel from "./components/MediaCaroussel";
 
 export default async function Home() {
-  const [movies, series, topRated, upcoming, games] = await Promise.all([
+  // Puxando tudo ao mesmo tempo (O JavaScript é rápido!)
+  const [movies, series, topRated, upcoming, games, animes, mangas] = await Promise.all([
     getMovies(),
     getSeries(),
     getTopRatedMovies(),
     getUpComingMovies(),
     getGames(),
+    getAnimes(),
+    getMangas(),
   ]);
 
   return (
@@ -16,6 +19,18 @@ export default async function Home() {
         title="Próximos Lançamentos"
         items={upcoming}
         colorClass="bg-yellow-500"
+      />
+
+      <MediaCarousel
+        title="Animes Populares"
+        items={animes}
+        colorClass="bg-purple-500"
+      />
+
+      <MediaCarousel
+        title="Mangás em Alta"
+        items={mangas}
+        colorClass="bg-orange-500"
       />
 
       <MediaCarousel
@@ -33,7 +48,7 @@ export default async function Home() {
       <MediaCarousel
         title="Aclamados pela Crítica"
         items={topRated}
-        colorClass="bg-purple-500"
+        colorClass="bg-white"
       />
 
       <MediaCarousel

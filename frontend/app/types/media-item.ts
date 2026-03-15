@@ -1,6 +1,6 @@
 export interface MediaItem {
     id: number;
-    source: 'TMDB' | 'RAWG' | 'ANILIST';
+    source: 'TMDB' | 'RAWG' | 'ANILIST' | 'JIKAN';
     slug: string;
     title: string;
     posterUrl: string;

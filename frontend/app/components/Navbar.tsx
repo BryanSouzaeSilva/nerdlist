@@ -1,14 +1,27 @@
+"use client"; // Adicione isto na linha 1!
+
+import { Clapperboard, Search, User } from "lucide-react";
 import Link from "next/link";
-import { Search, User, Clapperboard } from "lucide-react";
+import { useRouter } from "next/navigation"; // Importe o router
+import { useState } from "react"; // Importe o estado
 
 export default function Navbar() {
+    const router = useRouter();
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && searchTerm.trim() !== "") {
+        router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
+        }
+    };
+
     const navLinks = [
         { name: "Filmes", href: "/filmes" },
         { name: "Séries", href: "/series" },
         { name: "Animes", href: "/animes" },
         { name: "Mangás", href: "/mangas" },
         { name: "Jogos", href: "/jogos" },
-    ]
+    ];
 
     return (
         <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-neutral-950/90 backdrop-blur-xl">
@@ -45,6 +58,9 @@ export default function Navbar() {
                         <input
                             type="text"
                             placeholder="O que vamos explorar hoje?"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={handleSearch}
                             className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-sm text-gray-200 outline-none focus:bg-white/10 focus:border-emerald-500/40 transition-all placeholder:text-gray-600"
                         />
                     </div>
