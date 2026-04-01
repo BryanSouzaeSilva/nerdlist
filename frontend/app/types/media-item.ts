@@ -15,4 +15,11 @@ export interface MediaItem {
     };
     rating?: number;
     synopsis?: string;
+    trailerUrl?: string;
+    cast?: {
+        id: number;
+        name: string;
+        character: string;
+        profileUrl: string;
+    }[];
 }

@@ -294,14 +294,49 @@ export class MoviesService {
     const resourceType = typeUpper === 'SERIES' ? 'tv' : 'movie';
 
     try {
-      const { data } = await firstValueFrom(
-        this.httpService.get<TmdbMovie>(`${apiUrl}/${resourceType}/${id}`, {
-          params: {
-            api_key: apiKey,
-            language: 'pt-BR',
-          },
-        }),
+      const [detailsResponse, videosResponse, creditsResponse] =
+        await Promise.all([
+          firstValueFrom(
+            this.httpService.get<TmdbMovie>(`${apiUrl}/${resourceType}/${id}`, {
+              params: { api_key: apiKey, language: 'pt-BR' },
+            }),
+          ),
+          firstValueFrom(
+            this.httpService.get<{
+              results: { key: string; site: string; type: string }[];
+            }>(`${apiUrl}/${resourceType}/${id}/videos`, {
+              params: { api_key: apiKey },
+            }),
+          ),
+          firstValueFrom(
+            this.httpService.get<{
+              cast: {
+                id: number;
+                name: string;
+                character: string;
+                profile_path: string;
+              }[];
+            }>(`${apiUrl}/${resourceType}/${id}/credits`, {
+              params: { api_key: apiKey, language: 'pt-BR' },
+            }),
+          ),
+        ]);
+
+      const data = detailsResponse.data;
+
+      const trailer = videosResponse.data.results.find(
+        (v) =>
+          v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'),
       );
+
+      const cast = creditsResponse.data.cast.slice(0, 10).map((person) => ({
+        id: person.id,
+        name: person.name,
+        character: person.character,
+        profileUrl: person.profile_path
+          ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+          : '',
+      }));
 
       return {
         id: data.id,
@@ -313,7 +348,7 @@ export class MoviesService {
         backdropUrl: `https://image.tmdb.org/t/p/original${data.backdrop_path}`,
         releaseDate: data.release_date || data.first_air_date || '',
         genres: Array.isArray(data.genres)
-          ? data.genres.map((g: { id: number; name: string }) => g.name)
+          ? data.genres.map((g: { name: string }) => g.name)
           : [],
         status: 'RELEASED',
         rating: data.vote_average,
@@ -325,6 +360,8 @@ export class MoviesService {
           unit: typeUpper === 'SERIES' ? 'EPISODES' : 'MINUTES',
         },
         synopsis: data.overview,
+        trailerUrl: trailer ? trailer.key : '',
+        cast,
       };
     } catch {
       throw new NotFoundException(
