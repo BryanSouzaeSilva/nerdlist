@@ -2,7 +2,6 @@ import { getGames, getMovies, getSeries, getTopRatedMovies, getUpComingMovies, g
 import MediaCarousel from "./components/MediaCaroussel";
 
 export default async function Home() {
-  // Puxando tudo ao mesmo tempo (O JavaScript é rápido!)
   const [movies, series, topRated, upcoming, games, animes, mangas] = await Promise.all([
     getMovies(),
     getSeries(),

@@ -1,3 +1,5 @@
+export type UserListStatus = "IN_PROGRESS" | "PLAN_TO_WATCH" | "COMPLETED" | "ON_HOLD" | "DROPPED";
+
 export interface MediaItem {
     id: number;
     source: 'TMDB' | 'RAWG' | 'ANILIST' | 'JIKAN';
@@ -22,4 +24,5 @@ export interface MediaItem {
         character: string;
         profileUrl: string;
     }[];
+    userListStatus?: UserListStatus;
 }

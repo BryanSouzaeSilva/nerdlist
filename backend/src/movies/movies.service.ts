@@ -33,7 +33,14 @@ interface RawgGame {
   playtime: number;
   description_raw?: string;
   description?: string;
-  genres?: { id: number; name: string }[];
+  genres?: { name: string }[];
+}
+
+interface RawgMovieResponse {
+  results: Array<{
+    id: number;
+    data: { max: string };
+  }>;
 }
 
 interface RawgResponse {
@@ -50,6 +57,22 @@ interface JikanItem {
   published?: { from: string };
   episodes?: number;
   chapters?: number;
+  trailer?: { youtube_id: string };
+}
+
+interface JikanCastMember {
+  character: {
+    name: string;
+    images: {
+      jpg: { image_url: string };
+    };
+  };
+  voice_actors: Array<{
+    person: { name: string };
+  }>;
+}
+interface JikanCharacterResponse {
+  data: JikanCastMember[];
 }
 
 interface JikanResponse {
@@ -210,21 +233,33 @@ export class MoviesService {
     if (typeUpper === 'ANIME' || typeUpper === 'MANGA') {
       const resource = typeUpper === 'ANIME' ? 'anime' : 'manga';
       try {
-        const { data } = await firstValueFrom(
-          this.httpService.get<{ data: JikanItem }>(
-            `https://api.jikan.moe/v4/${resource}/${id}`,
+        const [detailsRes, charactersRes] = await Promise.all([
+          firstValueFrom(
+            this.httpService.get<{ data: JikanItem }>(
+              `https://api.jikan.moe/v4/${resource}/${id}`,
+            ),
           ),
-        );
+          typeUpper === 'ANIME'
+            ? firstValueFrom(
+                this.httpService.get<JikanCharacterResponse>(
+                  `https://api.jikan.moe/v4/anime/${id}/characters`,
+                ),
+              )
+            : Promise.resolve({ data: { data: [] as JikanCastMember[] } }),
+        ]);
 
-        const item = data.data;
+        const item = detailsRes.data.data;
+        const cast = charactersRes.data.data
+          .slice(0, 10)
+          .map((c: JikanCastMember, index: number) => ({
+            id: index,
+            name: c.voice_actors?.[0]?.person?.name || c.character.name,
+            character: c.character.name,
+            profileUrl: c.character.images.jpg.image_url,
+          }));
 
-        let rawDate = '';
-        if (typeUpper === 'ANIME') {
-          rawDate = item.aired?.from || '';
-        } else {
-          rawDate = item.published?.from || '';
-        }
-        const formattedDate = rawDate ? rawDate.split('T')[0] : '';
+        const rawDate =
+          typeUpper === 'ANIME' ? item.aired?.from : item.published?.from;
 
         return {
           id: item.mal_id,
@@ -234,7 +269,7 @@ export class MoviesService {
           slug: this.slugify(item.title),
           posterUrl: item.images?.jpg?.large_image_url || '',
           backdropUrl: item.images?.jpg?.large_image_url || '',
-          releaseDate: formattedDate,
+          releaseDate: rawDate ? rawDate.split('T')[0] : '',
           genres: [],
           status: 'RELEASED',
           rating: item.score || 0,
@@ -244,11 +279,11 @@ export class MoviesService {
             unit: typeUpper === 'ANIME' ? 'EPISODES' : 'CHAPTERS',
           },
           synopsis: item.synopsis || 'Sinopse não disponível.',
+          trailerUrl: item.trailer?.youtube_id || '',
+          cast,
         };
       } catch {
-        throw new NotFoundException(
-          `${typeUpper} com ID ${id} não encontrado no Jikan`,
-        );
+        throw new NotFoundException(`${typeUpper} não encontrado`);
       }
     }
 
@@ -257,24 +292,35 @@ export class MoviesService {
       const apiUrl = this.configService.get<string>('RAWG_API_URL');
 
       try {
-        const { data } = await firstValueFrom(
-          this.httpService.get<RawgGame>(`${apiUrl}/games/${id}`, {
-            params: { key: apiKey },
-          }),
-        );
+        const [detailsRes, moviesRes] = await Promise.all([
+          firstValueFrom(
+            this.httpService.get<RawgGame>(`${apiUrl}/games/${id}`, {
+              params: { key: apiKey },
+            }),
+          ),
+          firstValueFrom(
+            this.httpService.get<RawgMovieResponse>(
+              `${apiUrl}/games/${id}/movies`,
+              { params: { key: apiKey } },
+            ),
+          ),
+        ]);
+
+        const data = detailsRes.data;
+        const trailer = moviesRes.data.results[0]?.data.max || '';
 
         return {
           id: data.id,
           source: 'RAWG',
           type: 'GAME',
-          title: data.name || 'Título Desconhecido',
-          slug: this.slugify(data.name || 'title'),
+          title: data.name,
+          slug: this.slugify(data.name),
           posterUrl: data.background_image || '',
           backdropUrl:
             data.background_image_additional || data.background_image || '',
           releaseDate: data.released || '',
           genres: Array.isArray(data.genres)
-            ? (data.genres as { id: number; name: string }[]).map((g) => g.name)
+            ? data.genres.map((g: { name: string }) => g.name)
             : [],
           status: 'RELEASED',
           rating: data.rating ? data.rating * 2 : 0,
@@ -283,9 +329,11 @@ export class MoviesService {
             data.description_raw ||
             data.description ||
             'Sinopse não disponível.',
+          trailerUrl: trailer,
+          cast: [],
         };
       } catch {
-        throw new NotFoundException(`Jogo com ID ${id} não encontrado`);
+        throw new NotFoundException(`Jogo não encontrado`);
       }
     }
 

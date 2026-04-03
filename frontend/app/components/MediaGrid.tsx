@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MediaItem } from "../types/media-item";
+import SavedBadge from "./SaveBadge";
 
 interface MediaGridProps {
     items: MediaItem[];
@@ -45,6 +46,7 @@ export default function MediaGrid({ items }: MediaGridProps) {
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-neutral-950/90 via-neutral-950/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+                    <SavedBadge id={item.id} type={item.type} />
                 </div>
 
                 <div className="absolute bottom-0 p-3 w-full">

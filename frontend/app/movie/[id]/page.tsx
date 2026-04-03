@@ -2,6 +2,7 @@ import { getMovieById } from "@/app/services/api";
 import Image from "next/image";
 import BackButton from "@/app/components/BackButton";
 import TrailerPlayer from "@/app/components/TrailerPlayer";
+import ListButton from "@/app/components/ListButton";
 
 interface MoviePageProps {
     params: Promise<{ id: string }>;
@@ -22,9 +23,8 @@ export default async function MoviePage(props: MoviePageProps) {
     const isAnime = movie.type === 'ANIME';
     const isManga = movie.type === 'MANGA';
 
-    // REMOVIDO: rotate-2 para o alinhamento vertical (linha azul) ficar perfeito
     const posterContainerClass = isGame
-        ? "relative w-full max-w-md aspect-video rounded-xl overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.2)] border-2 border-red-500/30 transition-transform duration-500"
+        ? "relative w-full max-w-2xl aspect-video rounded-xl overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.3)] border-2 border-red-500/30 transition-transform duration-500"
         : "relative w-40 md:w-64 aspect-2/3 rounded-lg overflow-hidden shadow-[0_0_20px_rgba(0,0,0,0.5)] border-2 border-neutral-700/50 transition-transform duration-500";
 
     const themeColorText = isGame ? "text-red-400" : isSeries ? "text-blue-400" : isAnime ? "text-purple-400" : isManga ? "text-orange-400" : "text-emerald-400";
@@ -42,20 +42,21 @@ export default async function MoviePage(props: MoviePageProps) {
 
     return (
         <main className="min-h-screen bg-neutral-950 text-gray-100 pb-20">
-            <div className="relative w-full h-[85vh] md:h-[70vh] overflow-hidden">
+            <div className="relative w-full h-[85vh] md:h-[75vh] overflow-hidden">
                 <div className="absolute inset-0">
                     <Image
                         src={movie.backdropUrl || movie.posterUrl}
                         alt={movie.title}
                         fill
-                        className="object-cover opacity-30 blur-xs md:blur-xs"
+                        className="object-cover opacity-30 blur-none md:blur-sm"
                         priority
                     />
                     <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-neutral-950 from-5% via-neutral-950/40 to-transparent translate-y-12" />
                 </div>
 
                 <div className="absolute bottom-0 left-0 w-full z-10">
-                    <div className="max-w-7xl mx-auto px-8 md:px-12 pb-12 flex flex-col md:flex-row items-start md:items-end gap-6 md:gap-8">
+                    <div className={`max-w-7xl mx-auto px-8 md:px-12 pb-12 flex flex-col ${isGame ? "items-start" : "md:flex-row md:items-end"} gap-6 md:gap-8`}>
+                        
                         <div className={posterContainerClass}>
                             <Image
                                 src={movie.posterUrl}
@@ -84,7 +85,7 @@ export default async function MoviePage(props: MoviePageProps) {
                                     {movie.extend?.value} {
                                         movie.extend?.unit === 'MINUTES' ? 'Min' :
                                         movie.extend?.unit === 'CHAPTERS' ? 'Cap' :
-                                        'Ep'
+                                        movie.extend?.unit === 'HOURS' ? 'Horas' : 'Ep'
                                     }
                                 </span>
                                 
@@ -109,13 +110,16 @@ export default async function MoviePage(props: MoviePageProps) {
                                     </span>
                                 ))}
                             </div>
+
+                            <div className="flex flex-wrap items-center gap-6">
+                                <ListButton item={movie} themeColorBg={themeColorBg} />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-7xl mx-auto px-8 md:px-12 mt-8 md:mt-12 space-y-12 md:space-y-16">
-                
                 <div className="max-w-3xl">
                     <h2 className="text-xl md:text-2xl font-semibold mb-4 md:mb-6 text-white flex items-center gap-3">
                         <span className={`w-1.5 h-6 rounded-full ${themeColorBg}`} />

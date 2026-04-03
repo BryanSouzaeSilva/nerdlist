@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MediaItem } from "../types/media-item";
+import SavedBadge from "./SaveBadge";
 
 interface MediaCarouselProps {
     title: string;
@@ -89,6 +90,7 @@ export default function MediaCarousel({ title, items = [], colorClass }: MediaCa
                                     sizes="(max-width: 768px) 180px, 220px"
                                 />
                                 <div className="absolute inset-0 bg-linear-to-t from-neutral-950/90 via-neutral-950/20 to-transparent opacity-80 group-hover/card:opacity-100 transition-opacity" />
+                                <SavedBadge id={item.id} type={item.type} />
                             </div>
 
                             <div className="absolute bottom-0 p-4 w-full">
