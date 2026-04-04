@@ -123,7 +123,9 @@ export class MoviesService {
     const apiUrl = this.configService.get<string>('TMDB_API_URL');
 
     const { data } = await firstValueFrom(
-      this.httpService.get<TmdbResponse>(`${apiUrl}/tv/popular`, {
+      this.httpService.get<{
+        results: (TmdbMovie & { genre_ids?: number[] })[];
+      }>(`${apiUrl}/tv/popular`, {
         params: {
           api_key: apiKey,
           language: 'pt-BR',
@@ -131,21 +133,23 @@ export class MoviesService {
       }),
     );
 
-    return data.results.map((item) => ({
-      id: item.id,
-      source: 'TMDB',
-      type: 'SERIES',
-      title: item.title || item.name || 'Título Desconhecido',
-      slug: this.slugify(item.name || 'title'),
-      posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
-      backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
-      releaseDate: item.first_air_date || '',
-      genres: [],
-      status: 'RELEASED',
-      rating: item.vote_average,
-      extend: { value: 0, unit: 'EPISODES' },
-      synopsis: item.overview,
-    }));
+    return data.results
+      .filter((item) => !item.genre_ids?.includes(16))
+      .map((item) => ({
+        id: item.id,
+        source: 'TMDB',
+        type: 'SERIES',
+        title: item.title || item.name || 'Título Desconhecido',
+        slug: this.slugify(item.name || 'title'),
+        posterUrl: `https://image.tmdb.org/t/p/w500${item.poster_path}`,
+        backdropUrl: `https://image.tmdb.org/t/p/original${item.backdrop_path}`,
+        releaseDate: item.first_air_date || '',
+        genres: [],
+        status: 'RELEASED',
+        rating: item.vote_average,
+        extend: { value: 0, unit: 'EPISODES' },
+        synopsis: item.overview,
+      }));
   }
 
   async findAllGames(): Promise<MediaItem[]> {
@@ -478,7 +482,6 @@ export class MoviesService {
     let allResults: MediaItem[] = [];
     const isAll = !typeFilter || typeFilter === 'ALL';
 
-    // 1. BUSCA NO TMDB (Filmes e Séries)
     if (isAll || typeFilter === 'MOVIE' || typeFilter === 'SERIES') {
       const tmdbKey = this.configService.get<string>('TMDB_API_KEY');
       const tmdbUrl = this.configService.get<string>('TMDB_API_URL');
@@ -546,7 +549,6 @@ export class MoviesService {
       }
     }
 
-    // 2. BUSCA NA RAWG (Jogos)
     if (isAll || typeFilter === 'GAME') {
       const rawgKey = this.configService.get<string>('RAWG_API_KEY');
       const rawgUrl = this.configService.get<string>('RAWG_API_URL');
@@ -624,13 +626,11 @@ export class MoviesService {
         console.error('Erro na busca do Jikan', error);
       }
     }
-
     const validResults = allResults.filter((item) => item.posterUrl !== '');
 
     const normalize = (text: string) =>
       text
         .toLowerCase()
-        .normalize('NFD')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/-/g, ' ')
@@ -640,13 +640,24 @@ export class MoviesService {
 
     const finalFiltered = validResults.filter((item) => {
       if (query.length <= 3) return true;
-
       const normalizedTitle = normalize(item.title);
-
       return normalizedTitle.includes(normalizedQuery);
     });
 
-    return finalFiltered.sort((a, b) => {
+    const seen = new Set();
+    const uniqueResults = finalFiltered.filter((item) => {
+      const year = item.releaseDate ? item.releaseDate.split('-')[0] : '0000';
+      const key = `${this.slugify(item.title)}-${year}`;
+
+      if (seen.has(key)) {
+        return false;
+      }
+
+      seen.add(key);
+      return true;
+    });
+
+    return uniqueResults.sort((a, b) => {
       if (a.type === 'GAME' && b.type !== 'GAME') return 1;
       if (a.type !== 'GAME' && b.type === 'GAME') return -1;
       return 0;

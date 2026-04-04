@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useList } from "../hooks/useList";
 import { UserListStatus } from "../types/media-item";
 
@@ -9,10 +10,19 @@ interface SavedBadgeProps {
 }
 
 export default function SavedBadge({ id, type }: SavedBadgeProps) {
+    const [mounted, setMounted] = useState(false);
     const { getItemStatus } = useList();
+    
+    useEffect(() => {
+        const frame = requestAnimationFrame(() => {
+            setMounted(true);
+        });
+        return () => cancelAnimationFrame(frame);
+    }, []);
+
     const status = getItemStatus(id, type);
 
-    if (!status) return null;
+    if (!mounted || !status) return null;
 
     const getStatusLabel = (status: UserListStatus, mediaType: string) => {
         if (status === 'IN_PROGRESS') {
@@ -41,7 +51,7 @@ export default function SavedBadge({ id, type }: SavedBadgeProps) {
     };
 
     return (
-        <div 
+        <div
             className={`absolute top-2 right-2 z-20 px-2 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wide text-white rounded-md border shadow-lg backdrop-blur-md transition-transform hover:scale-105 ${getBadgeStyle(status)}`}
         >
             {getStatusLabel(status, type)}

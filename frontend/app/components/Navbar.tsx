@@ -1,9 +1,9 @@
-"use client"; // Adicione isto na linha 1!
+"use client";
 
 import { Clapperboard, Search, User } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation"; // Importe o router
-import { useState } from "react"; // Importe o estado
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Navbar() {
     const router = useRouter();
@@ -16,6 +16,7 @@ export default function Navbar() {
     };
 
     const navLinks = [
+        { name: "Início", href: "/" },
         { name: "Filmes", href: "/filmes" },
         { name: "Séries", href: "/series" },
         { name: "Animes", href: "/animes" },
@@ -66,18 +67,28 @@ export default function Navbar() {
                     </div>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-3 group cursor-pointer">
+                <Link
+                    href="/perfil"
+                    className="shrink-0 flex items-center gap-3 group cursor-pointer p-1 pr-3 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
+                    title="Meu Perfil"
+                >
                     <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent group-hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg">
-                            <User className="w-5 h-5 text-gray-400 group-hover:text-emerald-500" />
+                        <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent group-hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg bg-linear-to-br from-neutral-800 to-neutral-900">
+                            <User size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
                         </div>
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-950 rounded-full" />
+                        
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-950 rounded-full shadow-sm" />
                     </div>
 
-                    <span className="text-sm font-bold text-white hidden sm:block group-hover:text-emerald-500 transition-colors">
-                        Bryan
-                    </span>
-                </div>
+                    <div className="flex flex-col hidden sm:flex">
+                        <span className="text-sm font-bold text-white group-hover:text-emerald-500 transition-colors leading-none mb-1">
+                            Bryan
+                        </span>
+                        <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider leading-none">
+                            Nível 5
+                        </span>
+                    </div>
+                </Link>
 
             </div>
         </nav>
