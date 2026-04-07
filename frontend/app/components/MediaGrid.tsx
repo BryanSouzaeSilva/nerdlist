@@ -34,7 +34,7 @@ export default function MediaGrid({ items }: MediaGridProps) {
             return (
             <Link
                 key={item.id}
-                href={`/movie/${item.id}?type=${item.type}`}
+                href={`/movie/${item?.id}?type=${item.type}&source=${item?.source || ''}`}
                 className={`group relative self-start bg-neutral-900 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 border border-neutral-800 shadow-lg block ${badgeBg} hover:z-10`}
             >
                 <div className={`relative ${aspectClass} w-full`}>

@@ -32,20 +32,20 @@ export async function getSeries(): Promise<MediaItem[]> {
     }
 }
 
-export async function getMovieById(id: string, type: string): Promise<MediaItem> {
-    try {
-        const response = await fetch(`${API_URL}/movies/${id}?type=${type}`, { cache: 'no-store' });
-        
-        if (!response.ok) {
-            throw new Error("Falha ao buscar detalhes");
-        }
-
-        return response.json();
-    } catch (error) {
-        console.error(error);
-        throw error;
+export const getMovieById = async (id: string, type: string, source?: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    
+    let url = `${baseUrl}/movies/${id}?type=${type}`;
+    if (source) {
+        url += `&source=${source}`;
     }
-}
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error("Falha ao buscar detalhes");
+    }
+    return response.json();
+};
 
 export async function getTopRatedMovies(): Promise<MediaItem[]> {
     try {

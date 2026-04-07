@@ -46,7 +46,11 @@ export class MoviesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Query('type') type: string) {
-    return this.moviesService.findOne(+id, type);
+  findOne(
+    @Param('id') id: string,
+    @Query('type') type: string,
+    @Query('source') source?: string,
+  ) {
+    return this.moviesService.findOne(+id, type, source);
   }
 }

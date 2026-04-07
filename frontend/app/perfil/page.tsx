@@ -15,7 +15,7 @@ function ProfileCard({ item }: { item: MediaItem }) {
 
     return (
         <Link
-            href={`/movie/${item?.id}?type=${itemType}`}
+            href={`/movie/${item?.id}?type=${itemType}&source=${item?.source || ''}`}
             className="group relative flex-none snap-start bg-neutral-950 rounded-xl overflow-hidden border border-neutral-800 hover:border-neutral-600 transition-all shadow-xl"
         >
             <div className={`relative ${aspectClass} overflow-hidden`} style={{ position: 'relative' }}>

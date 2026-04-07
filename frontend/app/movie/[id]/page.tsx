@@ -6,22 +6,22 @@ import ListButton from "@/app/components/ListButton";
 
 interface MoviePageProps {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{ type: string }>;
+    searchParams: Promise<{ type: string, source?: string }>;
 }
 
 export default async function MoviePage(props: MoviePageProps) {
     const params = await props.params;
     const searchParams = await props.searchParams;
 
-    const id = params.id;
     const type = searchParams.type || 'MOVIE';
+    const source = searchParams.source || '';
 
-    const movie = await getMovieById(id, type);
+    const data = await getMovieById(params.id, type, source);
 
-    const isGame = movie.type === 'GAME';
-    const isSeries = movie.type === 'SERIES';
-    const isAnime = movie.type === 'ANIME';
-    const isManga = movie.type === 'MANGA';
+    const isGame = data.type === 'GAME';
+    const isSeries = data.type === 'SERIES';
+    const isAnime = data.type === 'ANIME';
+    const isManga = data.type === 'MANGA';
 
     const posterContainerClass = isGame
         ? "relative w-full max-w-2xl aspect-video rounded-xl overflow-hidden shadow-[0_0_30px_rgba(239,68,68,0.3)] border-2 border-red-500/30 transition-transform duration-500"
@@ -45,13 +45,13 @@ export default async function MoviePage(props: MoviePageProps) {
             <div className="relative w-full h-[85vh] md:h-[75vh] overflow-hidden">
                 <div className="absolute inset-0">
                     <Image
-                        src={movie.backdropUrl || movie.posterUrl}
-                        alt={movie.title}
+                        src={data.backdropUrl || data.posterUrl}
+                        alt={data.title}
                         fill
                         className="object-cover opacity-30 blur-none md:blur-sm"
                         priority
                     />
-                    <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-neutral-950 from-5% via-neutral-950/40 to-transparent translate-y-12" />
+                    <div className="absolute bottom-0 left-0 w-full h-full bg-linear-to-t from-neutral-950 from-5% via-neutral-950/40 to-transparent translate-y-12" />
                 </div>
 
                 <div className="absolute bottom-0 left-0 w-full z-10">
@@ -59,8 +59,8 @@ export default async function MoviePage(props: MoviePageProps) {
                         
                         <div className={posterContainerClass}>
                             <Image
-                                src={movie.posterUrl}
-                                alt={`Capa de ${movie.title}`}
+                                src={data.posterUrl}
+                                alt={`Capa de ${data.title}`}
                                 fill
                                 className="object-cover"
                             />
@@ -70,38 +70,38 @@ export default async function MoviePage(props: MoviePageProps) {
                             <BackButton colorClass={themeColorText} />
 
                             <h1 className="text-3xl md:text-6xl font-black tracking-tight text-white drop-shadow-lg leading-tight">
-                                {movie.title}
+                                {data.title}
                             </h1>
 
                             <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs md:text-base text-gray-200">
                                 <span className="flex items-center gap-1 text-green-400 font-bold bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded">
-                                    ★ {movie.rating?.toFixed(1)}
+                                    ★ {data.rating?.toFixed(1)}
                                 </span>
                                 <span>•</span>
-                                <span>{movie.releaseDate?.split("-")[0]}</span>
+                                <span>{data.releaseDate?.split("-")[0]}</span>
                                 <span>•</span>
                                 
                                 <span>
-                                    {movie.extend?.value} {
-                                        movie.extend?.unit === 'MINUTES' ? 'Min' :
-                                        movie.extend?.unit === 'CHAPTERS' ? 'Cap' :
-                                        movie.extend?.unit === 'HOURS' ? 'Horas' : 'Ep'
+                                    {data.extend?.value} {
+                                        data.extend?.unit === 'MINUTES' ? 'Min' :
+                                        data.extend?.unit === 'CHAPTERS' ? 'Cap' :
+                                        data.extend?.unit === 'HOURS' ? 'Horas' : 'Ep'
                                     }
                                 </span>
                                 
                                 <span>•</span>
                                 <span className={`px-2 py-0.5 rounded border font-medium ${themeBadge}`}>
                                     {
-                                        movie.type === 'SERIES' ? 'Série' :
-                                        movie.type === 'GAME' ? 'Jogo' :
-                                        movie.type === 'ANIME' ? 'Anime' :
-                                        movie.type === 'MANGA' ? 'Mangá' : 'Filme'
+                                        data.type === 'SERIES' ? 'Série' :
+                                        data.type === 'GAME' ? 'Jogo' :
+                                        data.type === 'ANIME' ? 'Anime' :
+                                        data.type === 'MANGA' ? 'Mangá' : 'Filme'
                                     }
                                 </span>
                             </div>
 
                             <div className="flex flex-wrap gap-2 mt-2">
-                                {movie.genres?.map((genre) => (
+                                {data.genres?.map((genre: string) => (
                                     <span
                                         key={genre}
                                         className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] md:text-xs text-gray-300"
@@ -112,7 +112,7 @@ export default async function MoviePage(props: MoviePageProps) {
                             </div>
 
                             <div className="flex flex-wrap items-center gap-6">
-                                <ListButton item={movie} themeColorBg={themeColorBg} />
+                                <ListButton item={data} themeColorBg={themeColorBg} />
                             </div>
                         </div>
                     </div>
@@ -126,26 +126,26 @@ export default async function MoviePage(props: MoviePageProps) {
                         Sinopse
                     </h2>
                     <p className="text-gray-400 leading-relaxed text-base md:text-lg text-justify font-light">
-                        {movie.synopsis || "Nenhuma sinopse disponível."}
+                        {data.synopsis || "Nenhuma sinopse disponível."}
                     </p>
                 </div>
 
-                {movie.trailerUrl && (
+                {data.trailerUrl && (
                     <div className="max-w-4xl">
-                        <TrailerPlayer videoId={movie.trailerUrl} />
+                        <TrailerPlayer videoId={data.trailerUrl} />
                     </div>
                 )}
 
-                {movie.cast && movie.cast.length > 0 && (
+                {data.cast && data.cast.length > 0 && (
                     <div className="pt-8 border-t border-white/5">
                         <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8 text-white flex items-center gap-3">
                             <span className={`w-1.5 h-6 rounded-full ${themeColorBg}`} />
                             Elenco Principal
                         </h2>
                         <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 snap-x snap-mandatory scroll-smooth custom-scrollbar">
-                            {movie.cast.map((actor) => (
+                            {data.cast.map((actor: { id: number; name: string; character: string; profileUrl: string }) => (
                                 <div key={actor.id} className="flex-none w-28 md:w-40 text-center group snap-start">
-                                    <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden mb-3 border border-white/5 group-hover:border-white/20 transition-all duration-300 shadow-lg">
+                                    <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden mb-3 border border-white/5 group-hover:border-white/20 transition-all duration-300 shadow-lg">
                                         {actor.profileUrl ? (
                                             <Image
                                                 src={actor.profileUrl}

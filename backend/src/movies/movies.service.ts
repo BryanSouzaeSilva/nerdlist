@@ -124,7 +124,10 @@ export class MoviesService {
 
     const { data } = await firstValueFrom(
       this.httpService.get<{
-        results: (TmdbMovie & { genre_ids?: number[] })[];
+        results: (TmdbMovie & {
+          genre_ids?: number[];
+          original_language?: string;
+        })[];
       }>(`${apiUrl}/tv/popular`, {
         params: {
           api_key: apiKey,
@@ -134,7 +137,10 @@ export class MoviesService {
     );
 
     return data.results
-      .filter((item) => !item.genre_ids?.includes(16))
+      .filter(
+        (item) =>
+          !(item.genre_ids?.includes(16) && item.original_language === 'ja'),
+      )
       .map((item) => ({
         id: item.id,
         source: 'TMDB',
@@ -208,59 +214,89 @@ export class MoviesService {
   }
 
   async findAllMangas(): Promise<MediaItem[]> {
-    const { data } = await firstValueFrom(
-      this.httpService.get<JikanResponse>('https://api.jikan.moe/v4/top/manga'),
-    );
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get<JikanResponse>(
+          'https://api.jikan.moe/v4/top/manga',
+        ),
+      );
 
-    return data.data.map((item) => ({
-      id: item.mal_id,
-      source: 'JIKAN' as const,
-      type: 'MANGA' as const,
-      title: item.title,
-      slug: this.slugify(item.title),
-      posterUrl: item.images?.jpg?.large_image_url || '',
-      backdropUrl: item.images?.jpg?.large_image_url || '',
-      releaseDate: item.published?.from
-        ? item.published.from.split('T')[0]
-        : '',
-      genres: [],
-      status: 'RELEASED' as const,
-      rating: item.score || 0,
-      extend: { value: item.chapters || 0, unit: 'CHAPTERS' as const },
-      synopsis: item.synopsis || 'Sinopse não disponível.',
-    }));
+      return data.data.map((item) => ({
+        id: item.mal_id,
+        source: 'JIKAN' as const,
+        type: 'MANGA' as const,
+        title: item.title,
+        slug: this.slugify(item.title),
+        posterUrl: item.images?.jpg?.large_image_url || '',
+        backdropUrl: item.images?.jpg?.large_image_url || '',
+        releaseDate: item.published?.from
+          ? item.published.from.split('T')[0]
+          : '',
+        genres: [],
+        status: 'RELEASED' as const,
+        rating: item.score || 0,
+        extend: { value: item.chapters || 0, unit: 'CHAPTERS' as const },
+        synopsis: item.synopsis || 'Sinopse não disponível.',
+      }));
+    } catch {
+      console.warn(
+        'Jikan API bloqueou temporariamente a busca de Mangás (Rate Limit).',
+      );
+      return [];
+    }
   }
 
-  async findOne(id: number, type: string): Promise<MediaItem> {
+  async findOne(id: number, type: string, source?: string): Promise<MediaItem> {
     const typeUpper = type?.toUpperCase();
+    const sourceUpper = source?.toUpperCase();
+
+    if (typeUpper === 'ANIME' && sourceUpper === 'TMDB') {
+      try {
+        return await this.fetchTmdbData(id, 'tv', 'ANIME');
+      } catch {
+        try {
+          return await this.fetchTmdbData(id, 'movie', 'ANIME');
+        } catch {
+          throw new NotFoundException(`Anime não encontrado no TMDB`);
+        }
+      }
+    }
 
     if (typeUpper === 'ANIME' || typeUpper === 'MANGA') {
       const resource = typeUpper === 'ANIME' ? 'anime' : 'manga';
       try {
-        const [detailsRes, charactersRes] = await Promise.all([
-          firstValueFrom(
-            this.httpService.get<{ data: JikanItem }>(
-              `https://api.jikan.moe/v4/${resource}/${id}`,
-            ),
+        const detailsRes = await firstValueFrom(
+          this.httpService.get<{ data: JikanItem }>(
+            `https://api.jikan.moe/v4/${resource}/${id}`,
           ),
-          typeUpper === 'ANIME'
-            ? firstValueFrom(
-                this.httpService.get<JikanCharacterResponse>(
-                  `https://api.jikan.moe/v4/anime/${id}/characters`,
-                ),
-              )
-            : Promise.resolve({ data: { data: [] as JikanCastMember[] } }),
-        ]);
-
+        );
         const item = detailsRes.data.data;
-        const cast = charactersRes.data.data
-          .slice(0, 10)
-          .map((c: JikanCastMember, index: number) => ({
-            id: index,
-            name: c.voice_actors?.[0]?.person?.name || c.character.name,
-            character: c.character.name,
-            profileUrl: c.character.images.jpg.image_url,
-          }));
+
+        let cast: {
+          id: number;
+          name: string;
+          character: string;
+          profileUrl: string;
+        }[] = [];
+        if (typeUpper === 'ANIME') {
+          try {
+            const charactersRes = await firstValueFrom(
+              this.httpService.get<JikanCharacterResponse>(
+                `https://api.jikan.moe/v4/anime/${id}/characters`,
+              ),
+            );
+            cast = charactersRes.data.data
+              .slice(0, 10)
+              .map((c: JikanCastMember, index: number) => ({
+                id: index,
+                name: c.voice_actors?.[0]?.person?.name || c.character.name,
+                character: c.character.name,
+                profileUrl: c.character.images?.jpg?.image_url || '',
+              }));
+          } catch {
+            console.warn(`Cast indisponível para ID ${id}`);
+          }
+        }
 
         const rawDate =
           typeUpper === 'ANIME' ? item.aired?.from : item.published?.from;
@@ -268,7 +304,7 @@ export class MoviesService {
         return {
           id: item.mal_id,
           source: 'JIKAN',
-          type: typeUpper,
+          type: typeUpper === 'ANIME' ? 'ANIME' : 'MANGA',
           title: item.title,
           slug: this.slugify(item.title),
           posterUrl: item.images?.jpg?.large_image_url || '',
@@ -287,14 +323,13 @@ export class MoviesService {
           cast,
         };
       } catch {
-        throw new NotFoundException(`${typeUpper} não encontrado`);
+        throw new NotFoundException(`${typeUpper} não encontrado no Jikan`);
       }
     }
 
     if (typeUpper === 'GAME') {
       const apiKey = this.configService.get<string>('RAWG_API_KEY');
       const apiUrl = this.configService.get<string>('RAWG_API_URL');
-
       try {
         const [detailsRes, moviesRes] = await Promise.all([
           firstValueFrom(
@@ -309,10 +344,8 @@ export class MoviesService {
             ),
           ),
         ]);
-
         const data = detailsRes.data;
         const trailer = moviesRes.data.results[0]?.data.max || '';
-
         return {
           id: data.id,
           source: 'RAWG',
@@ -324,7 +357,7 @@ export class MoviesService {
             data.background_image_additional || data.background_image || '',
           releaseDate: data.released || '',
           genres: Array.isArray(data.genres)
-            ? data.genres.map((g: { name: string }) => g.name)
+            ? data.genres.map((g) => g.name)
             : [],
           status: 'RELEASED',
           rating: data.rating ? data.rating * 2 : 0,
@@ -341,84 +374,88 @@ export class MoviesService {
       }
     }
 
+    const resourceType = typeUpper === 'SERIES' ? 'tv' : 'movie';
+    const mappedType = typeUpper === 'SERIES' ? 'SERIES' : 'MOVIE';
+    return this.fetchTmdbData(id, resourceType, mappedType);
+  }
+
+  private async fetchTmdbData(
+    id: number,
+    resourceType: 'tv' | 'movie',
+    mappedType: 'MOVIE' | 'SERIES' | 'ANIME',
+  ): Promise<MediaItem> {
     const apiKey = this.configService.get<string>('TMDB_API_KEY');
     const apiUrl = this.configService.get<string>('TMDB_API_URL');
-    const resourceType = typeUpper === 'SERIES' ? 'tv' : 'movie';
 
     try {
-      const [detailsResponse, videosResponse, creditsResponse] =
-        await Promise.all([
-          firstValueFrom(
-            this.httpService.get<TmdbMovie>(`${apiUrl}/${resourceType}/${id}`, {
-              params: { api_key: apiKey, language: 'pt-BR' },
-            }),
-          ),
-          firstValueFrom(
-            this.httpService.get<{
-              results: { key: string; site: string; type: string }[];
-            }>(`${apiUrl}/${resourceType}/${id}/videos`, {
-              params: { api_key: apiKey },
-            }),
-          ),
-          firstValueFrom(
-            this.httpService.get<{
+      const { data } = await firstValueFrom(
+        this.httpService.get<
+          TmdbMovie & {
+            videos?: { results: { key: string; site: string; type: string }[] };
+            credits?: {
               cast: {
                 id: number;
                 name: string;
                 character: string;
                 profile_path: string;
               }[];
-            }>(`${apiUrl}/${resourceType}/${id}/credits`, {
-              params: { api_key: apiKey, language: 'pt-BR' },
-            }),
-          ),
-        ]);
+            };
+          }
+        >(`${apiUrl}/${resourceType}/${id}`, {
+          params: {
+            api_key: apiKey,
+            language: 'pt-BR',
+            append_to_response: 'videos,credits',
+          },
+        }),
+      );
 
-      const data = detailsResponse.data;
-
-      const trailer = videosResponse.data.results.find(
+      const trailer = data.videos?.results?.find(
         (v) =>
           v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'),
       );
 
-      const cast = creditsResponse.data.cast.slice(0, 10).map((person) => ({
-        id: person.id,
-        name: person.name,
-        character: person.character,
-        profileUrl: person.profile_path
-          ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
-          : '',
-      }));
+      const cast =
+        data.credits?.cast?.slice(0, 10).map((person) => ({
+          id: person.id,
+          name: person.name,
+          character: person.character,
+          profileUrl: person.profile_path
+            ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
+            : '',
+        })) || [];
 
       return {
         id: data.id,
         source: 'TMDB',
-        type: typeUpper === 'SERIES' ? 'SERIES' : 'MOVIE',
+        type: mappedType,
         title: data.title || data.name || 'Título Desconhecido',
         slug: this.slugify(data.title || data.name || 'title'),
-        posterUrl: `https://image.tmdb.org/t/p/w500${data.poster_path}`,
-        backdropUrl: `https://image.tmdb.org/t/p/original${data.backdrop_path}`,
+        posterUrl: data.poster_path
+          ? `https://image.tmdb.org/t/p/w500${data.poster_path}`
+          : '',
+        backdropUrl: data.backdrop_path
+          ? `https://image.tmdb.org/t/p/original${data.backdrop_path}`
+          : '',
         releaseDate: data.release_date || data.first_air_date || '',
         genres: Array.isArray(data.genres)
-          ? data.genres.map((g: { name: string }) => g.name)
+          ? data.genres.map((g) => g.name)
           : [],
         status: 'RELEASED',
         rating: data.vote_average,
         extend: {
           value:
-            typeUpper === 'SERIES'
+            resourceType === 'tv'
               ? data.number_of_episodes || 0
               : data.runtime || 0,
-          unit: typeUpper === 'SERIES' ? 'EPISODES' : 'MINUTES',
+          unit: resourceType === 'tv' ? 'EPISODES' : 'MINUTES',
         },
         synopsis: data.overview,
         trailerUrl: trailer ? trailer.key : '',
         cast,
       };
     } catch {
-      throw new NotFoundException(
-        `Item com ID ${id} e tipo ${type} não encontrado`,
-      );
+      throw new NotFoundException(`Item com ID ${id} não encontrado no TMDB`);
     }
   }
 
@@ -478,71 +515,71 @@ export class MoviesService {
 
   async search(query: string, typeFilter?: string): Promise<MediaItem[]> {
     if (!query) return [];
-
     let allResults: MediaItem[] = [];
     const isAll = !typeFilter || typeFilter === 'ALL';
 
-    if (isAll || typeFilter === 'MOVIE' || typeFilter === 'SERIES') {
+    if (
+      isAll ||
+      typeFilter === 'MOVIE' ||
+      typeFilter === 'SERIES' ||
+      typeFilter === 'ANIME'
+    ) {
       const tmdbKey = this.configService.get<string>('TMDB_API_KEY');
       const tmdbUrl = this.configService.get<string>('TMDB_API_URL');
-
       try {
         const { data } = await firstValueFrom(
           this.httpService.get<{
-            results: Array<{
-              id: number;
+            results: (TmdbMovie & {
               media_type: string;
-              title?: string;
-              name?: string;
-              poster_path?: string;
-              backdrop_path?: string;
-              release_date?: string;
-              first_air_date?: string;
-              vote_average?: number;
-              overview?: string;
-            }>;
+              original_language?: string;
+              genre_ids?: number[];
+            })[];
           }>(`${tmdbUrl}/search/multi`, {
             params: { api_key: tmdbKey, language: 'pt-BR', query },
           }),
         );
-
         const tmdbMapped = data.results
-          .filter((item) => {
-            if (typeFilter === 'MOVIE' && item.media_type !== 'movie')
-              return false;
-            if (typeFilter === 'SERIES' && item.media_type !== 'tv')
-              return false;
-            return item.media_type === 'movie' || item.media_type === 'tv';
-          })
-          .map((item) => ({
-            id: item.id,
-            source: 'TMDB' as const,
-            type:
-              item.media_type === 'tv'
-                ? ('SERIES' as const)
-                : ('MOVIE' as const),
-            title: item.title || item.name || 'Título Desconhecido',
-            slug: this.slugify(item.title || item.name || 'title'),
-            posterUrl: item.poster_path
-              ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-              : '',
-            backdropUrl: item.backdrop_path
-              ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
-              : '',
-            releaseDate: item.release_date || item.first_air_date || '',
-            genres: [],
-            status: 'RELEASED' as const,
-            rating: item.vote_average || 0,
-            extend: {
-              value: 0,
-              unit:
-                item.media_type === 'tv'
-                  ? ('EPISODES' as const)
-                  : ('MINUTES' as const),
-            },
-            synopsis: item.overview || '',
-          }));
+          .filter(
+            (item) => item.media_type === 'movie' || item.media_type === 'tv',
+          )
+          .map((item) => {
+            const isAnime =
+              item.original_language === 'ja' && item.genre_ids?.includes(16);
+            let finalType: 'MOVIE' | 'SERIES' | 'ANIME' = 'MOVIE';
+            if (isAnime) finalType = 'ANIME';
+            else if (item.media_type === 'tv') finalType = 'SERIES';
 
+            return {
+              id: item.id,
+              source: 'TMDB' as const,
+              type: finalType,
+              title: item.title || item.name || 'Título Desconhecido',
+              slug: this.slugify(item.title || item.name || 'title'),
+              posterUrl: item.poster_path
+                ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
+                : '',
+              backdropUrl: item.backdrop_path
+                ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+                : '',
+              releaseDate: item.release_date || item.first_air_date || '',
+              genres: [],
+              status: 'RELEASED' as const,
+              rating: item.vote_average || 0,
+              extend: {
+                value: 0,
+                unit:
+                  item.media_type === 'tv'
+                    ? ('EPISODES' as const)
+                    : ('MINUTES' as const),
+              },
+              synopsis: item.overview || '',
+            };
+          })
+          .filter((item) => {
+            if (typeFilter && typeFilter !== 'ALL')
+              return item.type === typeFilter;
+            return true;
+          });
         allResults = [...allResults, ...tmdbMapped];
       } catch (error) {
         console.error('Erro ao buscar no TMDB:', error);
@@ -552,14 +589,12 @@ export class MoviesService {
     if (isAll || typeFilter === 'GAME') {
       const rawgKey = this.configService.get<string>('RAWG_API_KEY');
       const rawgUrl = this.configService.get<string>('RAWG_API_URL');
-
       try {
         const { data } = await firstValueFrom(
           this.httpService.get<RawgResponse>(`${rawgUrl}/games`, {
             params: { key: rawgKey, search: query, page_size: 15 },
           }),
         );
-
         const rawgMapped = data.results.map((item) => ({
           id: item.id,
           source: 'RAWG' as const,
@@ -575,36 +610,34 @@ export class MoviesService {
           extend: { value: item.playtime || 0, unit: 'HOURS' as const },
           synopsis: '',
         }));
-
         allResults = [...allResults, ...rawgMapped];
       } catch (error) {
         console.error('Erro na busca da RAWG', error);
       }
     }
 
-    if (isAll || typeFilter === 'ANIME' || typeFilter === 'MANGA') {
-      const resource = typeFilter === 'MANGA' ? 'manga' : 'anime';
+    const jikanSearches: Array<'anime' | 'manga'> = [];
+    if (isAll || typeFilter === 'ANIME') jikanSearches.push('anime');
+    if (isAll || typeFilter === 'MANGA') jikanSearches.push('manga');
+
+    for (const resource of jikanSearches) {
       try {
         const { data } = await firstValueFrom(
           this.httpService.get<JikanResponse>(
             `https://api.jikan.moe/v4/${resource}`,
-            {
-              params: { q: query, limit: 10 },
-            },
+            { params: { q: query, limit: 10 } },
           ),
         );
-
         const jikanMapped = data.data.map((item) => ({
           id: item.mal_id,
           source: 'JIKAN' as const,
-          type:
-            typeFilter === 'MANGA' ? ('MANGA' as const) : ('ANIME' as const),
+          type: resource === 'manga' ? ('MANGA' as const) : ('ANIME' as const),
           title: item.title,
           slug: this.slugify(item.title),
           posterUrl: item.images?.jpg?.large_image_url || '',
           backdropUrl: item.images?.jpg?.large_image_url || '',
           releaseDate:
-            typeFilter === 'MANGA'
+            resource === 'manga'
               ? item.published?.from?.split('T')[0] || ''
               : item.aired?.from?.split('T')[0] || '',
           genres: [],
@@ -612,22 +645,21 @@ export class MoviesService {
           rating: item.score || 0,
           extend: {
             value:
-              typeFilter === 'MANGA' ? item.chapters || 0 : item.episodes || 0,
+              resource === 'manga' ? item.chapters || 0 : item.episodes || 0,
             unit:
-              typeFilter === 'MANGA'
+              resource === 'manga'
                 ? ('CHAPTERS' as const)
                 : ('EPISODES' as const),
           },
           synopsis: item.synopsis || '',
         }));
-
         allResults = [...allResults, ...jikanMapped];
       } catch (error) {
-        console.error('Erro na busca do Jikan', error);
+        console.error(`Erro na busca do Jikan (${resource})`, error);
       }
     }
-    const validResults = allResults.filter((item) => item.posterUrl !== '');
 
+    const validResults = allResults.filter((item) => item.posterUrl !== '');
     const normalize = (text: string) =>
       text
         .toLowerCase()
@@ -635,24 +667,17 @@ export class MoviesService {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/-/g, ' ')
         .trim();
-
     const normalizedQuery = normalize(query);
-
     const finalFiltered = validResults.filter((item) => {
       if (query.length <= 3) return true;
-      const normalizedTitle = normalize(item.title);
-      return normalizedTitle.includes(normalizedQuery);
+      return normalize(item.title).includes(normalizedQuery);
     });
 
     const seen = new Set();
     const uniqueResults = finalFiltered.filter((item) => {
       const year = item.releaseDate ? item.releaseDate.split('-')[0] : '0000';
       const key = `${this.slugify(item.title)}-${year}`;
-
-      if (seen.has(key)) {
-        return false;
-      }
-
+      if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
