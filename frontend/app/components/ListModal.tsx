@@ -41,10 +41,16 @@ export default function ListModal({
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300">
-            <div className="relative w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-3xl shadow-2xl p-6">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all animate-in fade-in duration-300"
+            onClick={onClose}
+        >
+            <div
+                className="relative w-full max-w-sm bg-neutral-900 border border-neutral-800 rounded-3xl shadow-2xl p-6"
+                onClick={(e) => e.stopPropagation()}
+            >
                 
-                <button onClick={onClose} className="absolute top-5 right-5 text-neutral-500 hover:text-white transition-colors">
+                <button type="button" onClick={onClose} className="absolute top-5 right-5 text-neutral-500 hover:text-white transition-colors">
                     <X size={20} />
                 </button>
 
@@ -53,10 +59,14 @@ export default function ListModal({
 
                 <div className="mb-6">
                     <button
-                        onClick={onTogglePin}
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onTogglePin();
+                        }}
                         className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all ${
                             isPinned
-                            ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-500" 
+                            ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-500"
                             : "border-neutral-800 bg-neutral-950 text-neutral-500 hover:border-neutral-700"
                         }`}
                     >
@@ -74,10 +84,11 @@ export default function ListModal({
                 <div className="flex flex-col gap-2">
                     {categories.map((cat) => (
                         <button
+                            type="button"
                             key={cat.value}
-                            onClick={() => {
+                            onClick={(e) => {
+                                e.preventDefault();
                                 onSave(cat.value);
-                                onClose();
                             }}
                             className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all ${
                                 currentStatus === cat.value
@@ -93,7 +104,9 @@ export default function ListModal({
 
                 {currentStatus && (
                     <button
-                        onClick={() => {
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
                             onRemove();
                             onClose();
                         }}

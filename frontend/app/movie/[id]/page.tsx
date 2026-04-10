@@ -1,8 +1,10 @@
-import { getMovieById } from "@/app/services/api";
 import Image from "next/image";
 import BackButton from "@/app/components/BackButton";
 import TrailerPlayer from "@/app/components/TrailerPlayer";
 import ListButton from "@/app/components/ListButton";
+import { auth } from "@/auth";
+import { getMovieById } from "@/app/services/api";
+import { checkItemStatus } from "@/app/actions/list";
 
 interface MoviePageProps {
     params: Promise<{ id: string }>;
@@ -12,6 +14,9 @@ interface MoviePageProps {
 export default async function MoviePage(props: MoviePageProps) {
     const params = await props.params;
     const searchParams = await props.searchParams;
+    const session = await auth();
+
+    const initialData = session?.user ? await checkItemStatus(params.id, searchParams.type || 'MOVIE') : null;
 
     const type = searchParams.type || 'MOVIE';
     const source = searchParams.source || '';
@@ -111,9 +116,16 @@ export default async function MoviePage(props: MoviePageProps) {
                                 ))}
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-6">
-                                <ListButton item={data} themeColorBg={themeColorBg} />
-                            </div>
+                            {session?.user && (
+                                <div className="flex flex-wrap items-center gap-6">
+                                    <ListButton
+                                        item={data}
+                                        themeColorBg={themeColorBg}
+                                        initialStatus={initialData?.status}
+                                        initialPinned={initialData?.isPinned}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

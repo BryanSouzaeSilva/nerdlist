@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useList } from "../hooks/useList";
 import { UserListStatus } from "../types/media-item";
+import { getUserList } from "../actions/list";
 
 interface SavedBadgeProps {
     id: number | string;
@@ -11,16 +11,36 @@ interface SavedBadgeProps {
 
 export default function SavedBadge({ id, type }: SavedBadgeProps) {
     const [mounted, setMounted] = useState(false);
-    const { getItemStatus } = useList();
+    const [status, setStatus] = useState<UserListStatus | null>(null);
     
     useEffect(() => {
-        const frame = requestAnimationFrame(() => {
-            setMounted(true);
-        });
-        return () => cancelAnimationFrame(frame);
-    }, []);
+        let isSubscribed = true;
 
-    const status = getItemStatus(id, type);
+        const fetchStatus = async () => {
+            try {
+                const { items } = await getUserList();
+                if (!isSubscribed) return;
+
+                const existingItem = items.find(
+                    (i) => i.mediaId === String(id) && i.type === type
+                );
+
+                if (existingItem) {
+                    setStatus(existingItem.status as UserListStatus);
+                }
+                setMounted(true);
+            } catch (error) {
+                console.error("Erro ao carregar badge:", error);
+                setMounted(true);
+            }
+        };
+
+        fetchStatus();
+
+        return () => {
+            isSubscribed = false;
+        };
+    }, [id, type]);
 
     if (!mounted || !status) return null;
 

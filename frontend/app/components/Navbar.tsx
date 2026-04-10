@@ -1,19 +1,11 @@
-"use client";
-
-import { Clapperboard, Search, User } from "lucide-react";
+import { Clapperboard, LogOut, User as UserIcon } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import Image from "next/image";
+import { auth, signIn, signOut } from "@/auth";
+import SearchBar from "./SearchBar";
 
-export default function Navbar() {
-    const router = useRouter();
-    const [searchTerm, setSearchTerm] = useState("");
-
-    const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && searchTerm.trim() !== "") {
-        router.push(`/search?q=${encodeURIComponent(searchTerm)}`);
-        }
-    };
+export default async function Navbar() {
+    const session = await auth();
 
     const navLinks = [
         { name: "Início", href: "/" },
@@ -54,41 +46,71 @@ export default function Navbar() {
                         ))}
                     </ul>
 
-                    <div className="flex-1 max-w-lg relative group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-emerald-500 transition-colors" />
-                        <input
-                            type="text"
-                            placeholder="O que vamos explorar hoje?"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={handleSearch}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 pl-11 pr-4 text-sm text-gray-200 outline-none focus:bg-white/10 focus:border-emerald-500/40 transition-all placeholder:text-gray-600"
-                        />
-                    </div>
+                    <SearchBar />
                 </div>
 
-                <Link
-                    href="/perfil"
-                    className="shrink-0 flex items-center gap-3 group cursor-pointer p-1 pr-3 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
-                    title="Meu Perfil"
-                >
-                    <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent group-hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg bg-linear-to-br from-neutral-800 to-neutral-900">
-                            <User size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
-                        </div>
-                        
-                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-950 rounded-full shadow-sm" />
-                    </div>
+                <div className="shrink-0">
+                    {session?.user ? (
+                        <div className="flex items-center gap-3 group relative cursor-pointer p-1 pr-3 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10">
+                            <Link href="/perfil" className="flex items-center gap-3 w-full h-full">
+                                <div className="relative">
+                                    <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent group-hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg bg-linear-to-br from-neutral-800 to-neutral-900">
+                                        {session.user.image ? (
+                                            <Image 
+                                                src={session.user.image} 
+                                                alt="Avatar" 
+                                                width={40} 
+                                                height={40} 
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <UserIcon size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
+                                        )}
+                                    </div>
+                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-950 rounded-full shadow-sm" />
+                                </div>
 
-                    <div className="flex flex-col hidden sm:flex">
-                        <span className="text-sm font-bold text-white group-hover:text-emerald-500 transition-colors leading-none mb-1">
-                            Bryan
-                        </span>
-                        <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider leading-none">
-                            Nível 5
-                        </span>
-                    </div>
-                </Link>
+                                <div className="flex flex-col hidden sm:flex">
+                                    <span className="text-sm font-bold text-white group-hover:text-emerald-500 transition-colors leading-none mb-1">
+                                        {session.user.name?.split(" ")[0]}
+                                    </span>
+                                    <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider leading-none">
+                                        Nível 1
+                                    </span>
+                                </div>
+                            </Link>
+
+                            <div className="absolute right-0 top-full mt-2 w-40 bg-neutral-900 border border-white/10 rounded-lg shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                                <form action={async () => {
+                                    "use server";
+                                    await signOut();
+                                }}>
+                                    <button type="submit" className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-500 hover:bg-white/5 font-bold transition-colors">
+                                        <LogOut size={14} />
+                                        Sair da conta
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    ) : (
+                        <Link
+                            href="/login"
+                            className="shrink-0 flex items-center gap-3 group cursor-pointer p-1 pr-3 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10"
+                        >
+                            <div className="relative">
+                                <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent group-hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg bg-linear-to-br from-neutral-800 to-neutral-900">
+                                    <UserIcon size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col hidden sm:flex">
+                                <span className="text-sm font-bold text-white group-hover:text-emerald-500 transition-colors leading-none mb-1">
+                                    Entrar
+                                </span>
+                            </div>
+                        </Link>
+                    )}
+                </div>
 
             </div>
         </nav>
