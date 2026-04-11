@@ -1,5 +1,6 @@
 import { getGames } from "../services/api";
 import MediaGrid from "../components/MediaGrid";
+export const dynamic = "force-dynamic";
 
 export default async function JogosPage() {
     const games = await getGames();

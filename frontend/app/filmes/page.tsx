@@ -1,5 +1,6 @@
 import { getMovies } from "../services/api";
 import MediaGrid from "../components/MediaGrid";
+export const dynamic = "force-dynamic";
 
 export default async function FilmesPage() {
     const movies = await getMovies();

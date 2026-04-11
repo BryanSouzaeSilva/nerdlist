@@ -1,5 +1,6 @@
 import { getAnimes } from "../services/api";
 import MediaGrid from "../components/MediaGrid";
+export const dynamic = "force-dynamic";
 
 export default async function AnimesPage() {
     const animes = await getAnimes();

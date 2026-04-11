@@ -1,6 +1,6 @@
 import { MediaItem } from '../types/media-item';
 
-const API_URL = 'http://localhost:3001';
+const API_URL = 'https://nerdlist.onrender.com';
 
 export async function getMovies(): Promise<MediaItem[]> {
     try {
@@ -33,7 +33,7 @@ export async function getSeries(): Promise<MediaItem[]> {
 }
 
 export const getMovieById = async (id: string, type: string, source?: string) => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://nerdlist.onrender.com';
     
     let url = `${baseUrl}/movies/${id}?type=${type}`;
     if (source) {
