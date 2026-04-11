@@ -4,7 +4,7 @@ const API_URL = 'https://nerdlist.onrender.com';
 
 export async function getMovies(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies`, { cache: 'no-store'});
+        const response = await fetch(`${API_URL}/movies`, { next: { revalidate: 3600 } });
 
         if (!response.ok) {
             throw new Error("Falha ao buscar os filmes");
@@ -19,7 +19,7 @@ export async function getMovies(): Promise<MediaItem[]> {
 
 export async function getSeries(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies/series`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/series`, { next: { revalidate: 3600 } });
 
         if (!response.ok) {
             throw new Error("Falha ao buscar as séries");
@@ -40,7 +40,7 @@ export const getMovieById = async (id: string, type: string, source?: string) =>
         url += `&source=${source}`;
     }
 
-    const response = await fetch(url);
+    const response = await fetch(url, { next: { revalidate: 3600 } });
     if (!response.ok) {
         throw new Error("Falha ao buscar detalhes");
     }
@@ -49,7 +49,7 @@ export const getMovieById = async (id: string, type: string, source?: string) =>
 
 export async function getTopRatedMovies(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies/top-rated`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/top-rated`, { next: { revalidate: 3600 } });
         if( !response.ok ) throw new Error("Falha ao buscar top rated");
         return response.json();
     } catch (error) {
@@ -60,7 +60,7 @@ export async function getTopRatedMovies(): Promise<MediaItem[]> {
 
 export async function getUpComingMovies(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies/upcoming`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/upcoming`, { next: { revalidate: 3600 } });
         if( !response.ok ) throw new Error("Falha ao buscar lançamentos");
         return response.json();
     } catch (error) {
@@ -71,7 +71,7 @@ export async function getUpComingMovies(): Promise<MediaItem[]> {
 
 export async function getGames(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies/games`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/games`, { next: { revalidate: 3600 } });
         if (!response.ok) throw new Error("Falha ao buscar jogos");
         return response.json();
     } catch (error){
@@ -83,7 +83,7 @@ export async function getGames(): Promise<MediaItem[]> {
 export async function searchMedia(query: string, type?: string): Promise<MediaItem[]> {
     try {
         const typeParam = type && type !== 'ALL' ? `&type=${type}` : '';
-        const response = await fetch(`${API_URL}/movies/search?q=${query}${typeParam}`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/search?q=${query}${typeParam}`, { next: { revalidate: 3600 } });
         
         if (!response.ok) throw new Error("Falha ao buscar");
         return response.json();
@@ -95,7 +95,7 @@ export async function searchMedia(query: string, type?: string): Promise<MediaIt
 
 export async function getAnimes(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies/animes`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/animes`, { next: { revalidate: 3600 } });
         
         if (!response.ok) {
             console.warn("API de animes retornou erro, devolvendo lista vazia.");
@@ -111,7 +111,7 @@ export async function getAnimes(): Promise<MediaItem[]> {
 
 export async function getMangas(): Promise<MediaItem[]> {
     try {
-        const response = await fetch(`${API_URL}/movies/mangas`, { cache: 'no-store' });
+        const response = await fetch(`${API_URL}/movies/mangas`, { next: { revalidate: 3600 } });
         if (!response.ok) throw new Error("Falha ao buscar mangás");
         return response.json();
     } catch (error) {
