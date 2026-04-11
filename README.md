@@ -1,10 +1,3 @@
-Com certeza, Bryan! Como o seu projeto evoluiu muito desde o início — com a hospedagem oficial no **Render** e **Vercel**, banco de dados **Supabase** e sistema de autenticação completo — o seu README precisa refletir esse nível de maturidade técnica.
-
-Aqui está a versão atualizada e profissional do seu **README.md**, destacando a arquitetura moderna que você implementou:
-
----
-
-```markdown
 # 📜 NerdList
 
 **NerdList** é uma plataforma completa de gerenciamento e catalogação de mídias, inspirada no Letterboxd, mas expandida para cobrir todo o universo geek: **Filmes, Séries, Animes, Mangás e Jogos**.
@@ -86,4 +79,3 @@ NEXTAUTH_URL=[https://seu-dominio.com.br](https://seu-dominio.com.br)
 ## 😜 Autor
 
 Desenvolvido por **Bryan Souza**. Projeto focado em demonstrar habilidades em Engenharia de Software, arquitetura de APIs distribuídas e Next.js moderno.
-```
