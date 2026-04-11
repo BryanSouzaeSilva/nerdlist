@@ -1,76 +1,85 @@
-import { auth, signIn, signOut } from "@/auth";
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { User as UserIcon, LogOut, UserCircle } from "lucide-react";
+import Link from "next/link";
 import Image from "next/image";
-import { LogOut, User as UserIcon } from "lucide-react";
 
-export default async function UserMenu() {
-    const session = await auth();
+interface UserProps {
+    name?: string | null;
+    email?: string | null;
+    image?: string | null;
+}
 
-    if (session?.user) {
-        return (
-        <div className="flex items-center gap-4 group relative">
-            <div className="flex flex-col items-end hidden md:flex">
-            <span className="text-sm font-bold text-white leading-none">
-                {session.user.name}
-            </span>
-            <span className="text-[10px] text-gray-400">Membro NerdList</span>
-            </div>
+export default function UserMenu({ user, onSignOut }: { user: UserProps, onSignOut: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
 
-            <div className="relative">
-            <div className="w-10 h-10 rounded-full border-2 border-orange-600 overflow-hidden cursor-pointer hover:scale-105 transition-transform">
-                {session.user.image ? (
-                <Image
-                    src={session.user.image}
-                    alt="Profile"
-                    width={40}
-                    height={40}
-                    className="object-cover"
-                />
-                ) : (
-                <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
-                    <UserIcon className="text-gray-400 w-6 h-6" />
-                </div>
-                )}
-            </div>
-
-            <div className="absolute right-0 mt-2 w-48 bg-neutral-900 border border-white/10 rounded-md shadow-xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <div className="px-4 py-2 border-b border-white/5 mb-2 md:hidden">
-                    <p className="text-sm font-bold text-white truncate">{session.user.name}</p>
-                </div>
-                
-                <form
-                    action={async () => {
-                        "use server";
-                        await signOut();
-                    }}
-                >
-                <button
-                    type="submit"
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-500 hover:bg-white/5 transition-colors"
-                >
-                    <LogOut className="w-4 h-4" />
-                    Sair da Conta
-                </button>
-                </form>
-            </div>
-            </div>
-        </div>
-        );
-    }
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
-        <form
-        action={async () => {
-            "use server";
-            await signIn("google");
-        }}
-        >
-        <button
-            type="submit"
-            className="flex items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white font-black py-2 px-6 rounded-sm transition-all uppercase text-xs tracking-widest shadow-lg shadow-orange-900/20 active:scale-95"
-        >
-            <UserIcon className="w-4 h-4" />
-            Entrar
-        </button>
-        </form>
+        <div className="relative" ref={menuRef}>
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-3 p-1 pr-3 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10 text-left"
+            >
+                <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg bg-linear-to-br from-neutral-800 to-neutral-900">
+                        {user?.image ? (
+                            <Image
+                                src={user.image}
+                                alt="Avatar"
+                                width={40}
+                                height={40}
+                                className="object-cover"
+                            />
+                        ) : (
+                            <UserIcon size={20} className="text-neutral-400 hover:text-white transition-colors" />
+                        )}
+                    </div>
+                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-950 rounded-full shadow-sm" />
+                </div>
+
+                <div className="hidden sm:flex flex-col">
+                    <span className="text-sm font-bold text-white hover:text-emerald-500 transition-colors leading-none mb-1">
+                        {user?.name?.split(" ")[0]}
+                    </span>
+                    <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider leading-none">
+                        Nível 1
+                    </span>
+                </div>
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-neutral-900 border border-neutral-800 rounded-xl shadow-2xl py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+                    <Link
+                        href="/perfil"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-neutral-300 hover:text-white hover:bg-white/5 transition-colors font-semibold"
+                    >
+                        <UserCircle size={16} className="text-emerald-500" />
+                        Meu Perfil
+                    </Link>
+
+                    <div className="h-px w-full bg-neutral-800 my-1" />
+
+                    <form action={onSignOut}>
+                        <button type="submit" className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-500/10 font-bold transition-colors">
+                            <LogOut size={16} />
+                            Sair da conta
+                        </button>
+                    </form>
+                </div>
+            )}
+        </div>
     );
 }

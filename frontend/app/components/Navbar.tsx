@@ -1,8 +1,8 @@
-import { Clapperboard, LogOut, User as UserIcon } from "lucide-react";
+import { Clapperboard, User as UserIcon } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
-import { auth, signIn, signOut } from "@/auth";
+import { auth, signOut } from "@/auth";
 import SearchBar from "./SearchBar";
+import UserMenu from "./UserMenu";
 
 export default async function Navbar() {
     const session = await auth();
@@ -15,6 +15,11 @@ export default async function Navbar() {
         { name: "Mangás", href: "/mangas" },
         { name: "Jogos", href: "/jogos" },
     ];
+
+    const handleSignOut = async () => {
+        "use server";
+        await signOut();
+    };
 
     return (
         <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-neutral-950/90 backdrop-blur-xl">
@@ -51,47 +56,7 @@ export default async function Navbar() {
 
                 <div className="shrink-0">
                     {session?.user ? (
-                        <div className="flex items-center gap-3 group relative cursor-pointer p-1 pr-3 rounded-full hover:bg-white/5 transition-all border border-transparent hover:border-white/10">
-                            <Link href="/perfil" className="flex items-center gap-3 w-full h-full">
-                                <div className="relative">
-                                    <div className="w-10 h-10 rounded-full bg-neutral-800 border-2 border-transparent group-hover:border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-lg bg-linear-to-br from-neutral-800 to-neutral-900">
-                                        {session.user.image ? (
-                                            <Image 
-                                                src={session.user.image} 
-                                                alt="Avatar" 
-                                                width={40} 
-                                                height={40} 
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <UserIcon size={20} className="text-neutral-400 group-hover:text-white transition-colors" />
-                                        )}
-                                    </div>
-                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-neutral-950 rounded-full shadow-sm" />
-                                </div>
-
-                                <div className="flex flex-col hidden sm:flex">
-                                    <span className="text-sm font-bold text-white group-hover:text-emerald-500 transition-colors leading-none mb-1">
-                                        {session.user.name?.split(" ")[0]}
-                                    </span>
-                                    <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-wider leading-none">
-                                        Nível 1
-                                    </span>
-                                </div>
-                            </Link>
-
-                            <div className="absolute right-0 top-full mt-2 w-40 bg-neutral-900 border border-white/10 rounded-lg shadow-2xl py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                                <form action={async () => {
-                                    "use server";
-                                    await signOut();
-                                }}>
-                                    <button type="submit" className="w-full flex items-center gap-2 px-4 py-2 text-xs text-red-500 hover:bg-white/5 font-bold transition-colors">
-                                        <LogOut size={14} />
-                                        Sair da conta
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                        <UserMenu user={session.user} onSignOut={handleSignOut} />
                     ) : (
                         <Link
                             href="/login"

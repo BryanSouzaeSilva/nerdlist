@@ -15,8 +15,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NerdList - Home Page",
-  description: "Organize seus filmes, séries, games e muito mais.",
+  title: "NerdList | O seu cofre de cultura pop",
+  description: "Gerencie e avalie seus filmes, séries, animes, mangás e jogos favoritos em um só lugar.",
+  openGraph: {
+    title: "NerdList | O seu cofre de cultura pop",
+    description: "Gerencie e avalie seus filmes, séries, animes, mangás e jogos favoritos em um só lugar.",
+    url: "https://nerdlist.vercel.app",
+    siteName: "NerdList",
+    locale: "pt_BR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "NerdList | O seu cofre de cultura pop",
+    description: "Gerencie e avalie seus filmes, séries, animes, mangás e jogos favoritos em um só lugar.",
+  },
 };
 
 export default function RootLayout({ children, }: Readonly<{children: React.ReactNode;}>) {
