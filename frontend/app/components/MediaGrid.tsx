@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { MediaItem } from "../types/media-item";
 import SavedBadge from "./SaveBadge";
+import { getUserList } from "../actions/list";
 
 interface MediaGridProps {
     items: MediaItem[];
 }
 
-export default function MediaGrid({ items }: MediaGridProps) {
+export default async function MediaGrid({ items }: MediaGridProps) {
+    const { items: savedItems } = await getUserList();
+
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
         
@@ -31,6 +34,10 @@ export default function MediaGrid({ items }: MediaGridProps) {
             
             const badgeText = isSeries ? "Série" : isGame ? "Jogo" : isAnime ? "Anime" : isManga ? "Mangá" : "Filme";
 
+            const savedInfo = savedItems.find(
+                (saved) => saved.mediaId === String(item.id) && saved.type === item.type
+            );
+
             return (
             <Link
                 key={item.id}
@@ -46,7 +53,8 @@ export default function MediaGrid({ items }: MediaGridProps) {
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 16vw"
                     />
                     <div className="absolute inset-0 bg-linear-to-t from-neutral-950/90 via-neutral-950/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
-                    <SavedBadge id={item.id} type={item.type} />
+                    
+                    <SavedBadge id={item.id} type={item.type} initialStatus={savedInfo?.status} />
                 </div>
 
                 <div className="absolute bottom-0 p-3 w-full">

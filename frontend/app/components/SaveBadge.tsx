@@ -7,13 +7,19 @@ import { getUserList } from "../actions/list";
 interface SavedBadgeProps {
     id: number | string;
     type: string;
+    initialStatus?: string | null;
 }
 
-export default function SavedBadge({ id, type }: SavedBadgeProps) {
-    const [mounted, setMounted] = useState(false);
-    const [status, setStatus] = useState<UserListStatus | null>(null);
-    
+export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps) {
+    const [status, setStatus] = useState<UserListStatus | null>(
+        (initialStatus as UserListStatus) || null
+    );
+
     useEffect(() => {
+        if (initialStatus) {
+            return;
+        }
+
         let isSubscribed = true;
 
         const fetchStatus = async () => {
@@ -28,10 +34,8 @@ export default function SavedBadge({ id, type }: SavedBadgeProps) {
                 if (existingItem) {
                     setStatus(existingItem.status as UserListStatus);
                 }
-                setMounted(true);
             } catch (error) {
                 console.error("Erro ao carregar badge:", error);
-                setMounted(true);
             }
         };
 
@@ -40,9 +44,9 @@ export default function SavedBadge({ id, type }: SavedBadgeProps) {
         return () => {
             isSubscribed = false;
         };
-    }, [id, type]);
+    }, [id, type, initialStatus]);
 
-    if (!mounted || !status) return null;
+    if (!status) return null;
 
     const getStatusLabel = (status: UserListStatus, mediaType: string) => {
         if (status === 'IN_PROGRESS') {
