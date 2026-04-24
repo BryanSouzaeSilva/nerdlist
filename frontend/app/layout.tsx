@@ -7,6 +7,7 @@ import ConditionalNavbar from "./components/ConditionalNavbar";
 import AuthProvider from "./components/SessionProvider";
 import { Toaster } from "sonner";
 import MobileHeader from "./components/MobileHeader";
+import ChangelogModal from "./components/ChangelogModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </ConditionalNavbar>
           <main className="pt-20 pb-20 md:pb-0">
             {children}
+            <ChangelogModal />
             <Toaster theme="dark" position="bottom-right" richColors closeButton />
           </main>
         </AuthProvider>

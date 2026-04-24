@@ -14,6 +14,7 @@ export default function CategoryFilters() {
         { id: 'MOVIE', label: 'Filmes' },
         { id: 'SERIES', label: 'Séries' },
         { id: 'ANIME', label: 'Animes' },
+        { id: 'MANGA', label: 'Mangás' },
         { id: 'GAME', label: 'Jogos' }
     ];
 
@@ -26,7 +27,6 @@ export default function CategoryFilters() {
             params.set("type", type);
         }
 
-        // Navega para a nova URL mantendo o termo de busca
         router.push(`/search?${params.toString()}`);
     };
 
@@ -35,12 +35,12 @@ export default function CategoryFilters() {
             {categories.map((cat) => {
                 const isActive = currentType === cat.id;
                 return (
-                    <button 
+                    <button
                         key={cat.id}
                         onClick={() => handleFilter(cat.id)}
                         className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all border shrink-0 ${
-                            isActive 
-                            ? "bg-emerald-500 border-emerald-500 text-neutral-950 scale-105 shadow-[0_0_15px_rgba(16,185,129,0.3)]" 
+                            isActive
+                            ? "bg-emerald-500 border-emerald-500 text-neutral-950 scale-105 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                             : "bg-neutral-900 border-white/5 text-neutral-500 hover:text-white hover:border-white/10"
                         }`}
                     >
