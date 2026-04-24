@@ -59,7 +59,8 @@ export async function saveMediaToList(mediaData: MediaDataInput, status: string)
 
     revalidatePath(`/movie/${mediaData.id}`);
     revalidatePath("/perfil");
-    
+    revalidatePath("/", "layout");
+
     return { success: true, item };
   } catch (error) {
     console.error("Erro ao salvar item:", error);
@@ -84,6 +85,7 @@ export async function removeMediaFromList(mediaId: string, type: string) {
 
     revalidatePath(`/movie/${mediaId}`);
     revalidatePath("/perfil");
+    revalidatePath("/", "layout");
 
     return { success: true };
   } catch (error) {

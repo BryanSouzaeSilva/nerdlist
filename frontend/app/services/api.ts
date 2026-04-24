@@ -1,6 +1,6 @@
 import { MediaItem } from '../types/media-item';
 
-const API_URL = 'https://nerdlist.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://nerdlist.onrender.com';
 
 export async function getMovies(): Promise<MediaItem[]> {
     try {
