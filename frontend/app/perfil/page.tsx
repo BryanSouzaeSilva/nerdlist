@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import ClientProfileContent from "./ClientProfileContent";
 import { getUserList } from "../actions/list";
+import { prisma } from "@/lib/prisma";
 import { MediaItem } from "../types/media-item";
 
 export default async function ProfilePage() {
@@ -11,7 +12,13 @@ export default async function ProfilePage() {
         redirect("/login");
     }
 
-    const { items, pins } = await getUserList();
+    const [{ items, pins }, reviews] = await Promise.all([
+        getUserList(),
+        prisma.review.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: 'desc' }
+        })
+    ]);
 
     const mappedItems = items.map(item => ({
         id: item.mediaId,
@@ -37,6 +44,7 @@ export default async function ProfilePage() {
             userName={session.user.name?.split(" ")[0] || "Nerd"}
             items={mappedItems}
             pins={mappedPins}
+            reviews={reviews}
         />
     );
 }

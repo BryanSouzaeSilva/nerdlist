@@ -47,17 +47,32 @@ interface RawgResponse {
   results: RawgGame[];
 }
 
+interface JikanGenre {
+  name: string;
+  mal_id: number;
+  type: string;
+}
+
 interface JikanItem {
   mal_id: number;
   title: string;
-  images: { jpg: { large_image_url: string } };
-  synopsis: string;
-  score: number;
+  images: {
+    jpg: {
+      large_image_url: string;
+      image_url: string;
+    };
+  };
   aired?: { from: string };
   published?: { from: string };
+  score: number;
+  status: string;
+  synopsis: string;
   episodes?: number;
   chapters?: number;
-  trailer?: { youtube_id: string };
+  genres: JikanGenre[];
+  trailer?: {
+    youtube_id: string;
+  };
 }
 
 interface JikanCastMember {
@@ -310,7 +325,7 @@ export class MoviesService {
           posterUrl: item.images?.jpg?.large_image_url || '',
           backdropUrl: item.images?.jpg?.large_image_url || '',
           releaseDate: rawDate ? rawDate.split('T')[0] : '',
-          genres: [],
+          genres: item.genres ? item.genres.map((g: JikanGenre) => g.name) : [],
           status: 'RELEASED',
           rating: item.score || 0,
           extend: {

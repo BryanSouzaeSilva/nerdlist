@@ -1,7 +1,9 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseInterceptors } from '@nestjs/common';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 import { MoviesService } from './movies.service';
 
 @Controller('movies')
+@UseInterceptors(CacheInterceptor)
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 

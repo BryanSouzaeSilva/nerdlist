@@ -2,9 +2,30 @@ import Image from "next/image";
 import BackButton from "@/app/components/BackButton";
 import TrailerPlayer from "@/app/components/TrailerPlayer";
 import ListButton from "@/app/components/ListButton";
+import ReviewForm from "@/app/components/ReviewForm";
 import { auth } from "@/auth";
 import { getMovieById } from "@/app/services/api";
 import { checkItemStatus } from "@/app/actions/list";
+import { getMediaReviews } from "@/app/actions/review";
+import { Star } from "lucide-react";
+
+interface ReviewWithUser {
+    id: string;
+    userId: string;
+    rating: number;
+    comment: string | null;
+    user: {
+        name: string | null;
+        image: string | null;
+    };
+}
+
+interface CastMember {
+    id: number;
+    name: string;
+    character: string;
+    profileUrl: string | null;
+}
 
 interface MoviePageProps {
     params: Promise<{ id: string }>;
@@ -16,12 +37,14 @@ export default async function MoviePage(props: MoviePageProps) {
     const searchParams = await props.searchParams;
     const session = await auth();
 
-    const initialData = session?.user ? await checkItemStatus(params.id, searchParams.type || 'MOVIE') : null;
-
     const type = searchParams.type || 'MOVIE';
     const source = searchParams.source || '';
 
     const data = await getMovieById(params.id, type, source);
+    const initialData = session?.user ? await checkItemStatus(params.id, type) : null;
+    
+    const reviews = await getMediaReviews(params.id, type) as ReviewWithUser[];
+    const userReview = reviews.find((r) => r.userId === session?.user?.id);
 
     const isGame = data.type === 'GAME';
     const isSeries = data.type === 'SERIES';
@@ -148,6 +171,7 @@ export default async function MoviePage(props: MoviePageProps) {
                     </div>
                 )}
 
+
                 {data.cast && data.cast.length > 0 && (
                     <div className="pt-8 border-t border-white/5">
                         <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8 text-white flex items-center gap-3">
@@ -155,7 +179,7 @@ export default async function MoviePage(props: MoviePageProps) {
                             Elenco Principal
                         </h2>
                         <div className="flex gap-4 md:gap-6 overflow-x-auto pb-6 snap-x snap-mandatory scroll-smooth custom-scrollbar">
-                            {data.cast.map((actor: { id: number; name: string; character: string; profileUrl: string }) => (
+                            {data.cast.map((actor: CastMember) => (
                                 <div key={actor.id} className="flex-none w-28 md:w-40 text-center group snap-start">
                                     <div className="relative w-full aspect-3/4 rounded-xl overflow-hidden mb-3 border border-white/5 group-hover:border-white/20 transition-all duration-300 shadow-lg">
                                         {actor.profileUrl ? (
@@ -179,6 +203,65 @@ export default async function MoviePage(props: MoviePageProps) {
                         </div>
                     </div>
                 )}
+
+                <section className="max-w-4xl">
+                    {session?.user ? (
+                        <ReviewForm
+                            mediaId={params.id}
+                            type={type}
+                            initialData={userReview ? { rating: userReview.rating, comment: userReview.comment } : undefined} 
+                        />
+                    ) : (
+                        <div className="bg-neutral-900/50 border border-white/5 p-6 rounded-2xl text-center">
+                            <p className="text-gray-400 italic">
+                                Faça <a href="/login" className="text-emerald-500 hover:underline">login</a> para deixar sua avaliação.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="mt-12 space-y-6">
+                        <h3 className="text-2xl font-black text-white flex items-center gap-2">
+                            <Star className="w-6 h-6 text-emerald-500 fill-emerald-500" />
+                            Comentários da Comunidade
+                        </h3>
+                        
+                        {reviews.length === 0 ? (
+                            <p className="text-gray-500 italic">Ninguém avaliou ainda. Seja o primeiro!</p>
+                        ) : (
+                            <div className="grid gap-4">
+                                {reviews.map((rev) => (
+                                    <div key={rev.id} className="bg-neutral-900/50 border border-white/5 p-6 rounded-2xl">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="relative w-10 h-10 bg-neutral-800 rounded-full overflow-hidden border border-white/10">
+                                                {rev.user.image ? (
+                                                    <Image
+                                                        src={rev.user.image}
+                                                        alt={rev.user.name || 'Avatar'}
+                                                        fill
+                                                        className="object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold uppercase">
+                                                        {rev.user.name?.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-bold">{rev.user.name}</p>
+                                                <div className="flex gap-1 text-emerald-500">
+                                                    {Array.from({ length: rev.rating }).map((_, i) => (
+                                                        <Star key={i} className="w-3 h-3 fill-current" />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p className="text-gray-300 leading-relaxed">{rev.comment || "Sem comentário."}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </section>
             </div>
         </main>
     );

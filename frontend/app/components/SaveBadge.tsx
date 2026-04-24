@@ -11,14 +11,14 @@ interface SavedBadgeProps {
 }
 
 export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps) {
-    const [status, setStatus] = useState<UserListStatus | null>(
-        (initialStatus as UserListStatus) || null
-    );
+    const [fetchedStatus, setFetchedStatus] = useState<UserListStatus | null>(null);
+
+    const activeStatus = initialStatus !== undefined
+        ? (initialStatus as UserListStatus | null)
+        : fetchedStatus;
 
     useEffect(() => {
-        if (initialStatus) {
-            return;
-        }
+        if (initialStatus !== undefined) return;
 
         let isSubscribed = true;
 
@@ -28,11 +28,11 @@ export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps)
                 if (!isSubscribed) return;
 
                 const existingItem = items.find(
-                    (i) => i.mediaId === String(id) && i.type === type
+                    (i) => String(i.mediaId) === String(id) && i.type === type
                 );
 
                 if (existingItem) {
-                    setStatus(existingItem.status as UserListStatus);
+                    setFetchedStatus(existingItem.status as UserListStatus);
                 }
             } catch (error) {
                 console.error("Erro ao carregar badge:", error);
@@ -46,7 +46,7 @@ export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps)
         };
     }, [id, type, initialStatus]);
 
-    if (!status) return null;
+    if (!activeStatus) return null;
 
     const getStatusLabel = (status: UserListStatus, mediaType: string) => {
         if (status === 'IN_PROGRESS') {
@@ -76,9 +76,9 @@ export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps)
 
     return (
         <div
-            className={`absolute top-2 right-2 z-20 px-2 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wide text-white rounded-md border shadow-lg backdrop-blur-md transition-transform hover:scale-105 ${getBadgeStyle(status)}`}
+            className={`absolute top-2 right-2 z-20 px-2 py-1 text-[10px] md:text-xs font-bold uppercase tracking-wide text-white rounded-md border shadow-lg backdrop-blur-md transition-transform hover:scale-105 ${getBadgeStyle(activeStatus)}`}
         >
-            {getStatusLabel(status, type)}
+            {getStatusLabel(activeStatus, type)}
         </div>
     );
 }
