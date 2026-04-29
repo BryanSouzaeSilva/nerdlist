@@ -62,7 +62,13 @@ export default function MediaCarousel({ title, items = [], colorClass, userList 
                     return (
                         <Link key={item.id} href={`/movie/${item?.id}?type=${item.type}&source=${item?.source || ''}`} className={`group/card relative flex-none ${cardWidthClass} snap-start bg-neutral-900 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 border border-neutral-800 shadow-lg block hover:z-10`}>
                             <div className={`relative ${aspectClass} w-full`}>
-                                <Image src={item.posterUrl} alt={item.title} fill className="object-cover" sizes="(max-width: 768px) 180px, 220px" />
+                                <Image
+                                    src={item.posterUrl}
+                                    alt={item.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 180px, 220px"
+                                />
                                 <div className="absolute inset-0 bg-linear-to-t from-neutral-950/90 via-neutral-950/20 to-transparent opacity-80 group-hover/card:opacity-100 transition-opacity" />
                                 
                                 <SavedBadge id={item.id} type={item.type} initialStatus={savedInfo?.status} />
