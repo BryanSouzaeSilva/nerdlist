@@ -4,13 +4,12 @@ import { useState } from "react";
 import { MediaItem, UserListStatus } from "../types/media-item";
 import Link from "next/link";
 import Image from "next/image";
-import { 
-    FolderOpen, User, ChevronRight, 
-    LayoutGrid, BarChart3, MessageSquare, 
-    ListOrdered, Star, Award 
+import {
+    FolderOpen, User, ChevronRight,
+    LayoutGrid, BarChart3, MessageSquare,
+    ListOrdered, Star, Award
 } from "lucide-react";
 
-// --- Componente de Card de Mídia ---
 function ProfileCard({ item }: { item: MediaItem }) {
     const itemType = item?.type || 'MOVIE';
     const isGame = itemType === 'GAME';
@@ -69,7 +68,6 @@ interface ClientProfileProps {
 export default function ClientProfileContent({ userName, items, pins, reviews }: ClientProfileProps) {
     const [activeTab, setActiveTab] = useState("COLLECTION");
 
-    // --- LÓGICA DE ESTATÍSTICAS ---
     const totalMedia = items.length;
     const completedCount = items.filter(i => i.userListStatus === 'COMPLETED').length;
     const completionRate = totalMedia > 0 ? Math.round((completedCount / totalMedia) * 100) : 0;
@@ -107,7 +105,6 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
         <main className="min-h-screen bg-neutral-950 pt-28 pb-20 px-6 md:px-12">
             <div className="max-w-7xl mx-auto">
                 
-                {/* --- ÁREA FIXA: CABEÇALHO --- */}
                 <header className="bg-linear-to-br from-neutral-900 to-neutral-800 p-8 rounded-3xl border border-neutral-700/50 mb-12 shadow-2xl relative overflow-hidden">
                     <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                         <div className="relative group">
@@ -132,7 +129,6 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
                             </div>
                         </div>
 
-                        {/* CONTADORES (Sem Moedas/Estrelas) */}
                         <div className="grid grid-cols-2 gap-4 text-center md:text-right">
                             <div className="bg-white/5 p-3 rounded-2xl border border-white/5 flex flex-col items-center min-w-[80px]">
                                 <p className="text-2xl font-black text-white leading-none">{items.length}</p>
@@ -146,7 +142,6 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
                     </div>
                 </header>
 
-                {/* --- SELETOR DE ABAS: Ajustado para Mobile (Grid 2x2) --- */}
                 <nav className="grid grid-cols-2 md:flex md:justify-start gap-3 md:gap-4 border-b border-white/5 pb-6 mb-10">
                     {tabs.map((tab) => {
                         const Icon = tab.icon;
@@ -170,7 +165,6 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
 
                 <div className="min-h-100">
                     
-                    {/* --- CONTEÚDO: COLEÇÃO --- */}
                     {activeTab === "COLLECTION" && (
                         <>
                             <section className="mb-16">
@@ -202,18 +196,23 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
 
                                     return (
                                         <section key={section.status}>
-                                            <div className="flex items-center justify-between mb-8 group cursor-pointer">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`w-1.5 h-8 rounded-full ${section.color}`} />
-                                                    <h2 className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
-                                                        {section.title}
-                                                        <span className="ml-4 text-sm font-bold text-neutral-600">
-                                                            {filteredItems.length}
-                                                        </span>
-                                                    </h2>
+                                            <Link
+                                                href={`/perfil/${section.status.toLowerCase()}`}
+                                                className="block group mb-8"
+                                            >
+                                                <div className="flex items-center justify-between cursor-pointer">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`w-1.5 h-8 rounded-full ${section.color}`} />
+                                                        <h2 className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
+                                                            {section.title}
+                                                            <span className="ml-4 text-sm font-bold text-neutral-600">
+                                                                {filteredItems.length}
+                                                            </span>
+                                                        </h2>
+                                                    </div>
+                                                    <ChevronRight size={24} className="text-neutral-700 group-hover:text-white group-hover:translate-x-2 transition-all" />
                                                 </div>
-                                                <ChevronRight size={24} className="text-neutral-700 group-hover:text-white group-hover:translate-x-2 transition-all" />
-                                            </div>
+                                            </Link>
 
                                             <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar snap-x">
                                                 {filteredItems.map((item) => (
@@ -227,7 +226,6 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
                         </>
                     )}
 
-                    {/* --- CONTEÚDO: ESTATÍSTICAS --- */}
                     {activeTab === "STATS" && (
                         <div className="space-y-12 animate-in fade-in duration-500">
                             <h2 className="text-xs font-black text-neutral-500 uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
@@ -284,7 +282,6 @@ export default function ClientProfileContent({ userName, items, pins, reviews }:
                                     </div>
                                 </div>
 
-                                {/* Card de Conquista Rápida (Crítico em Ascensão) */}
                                 <div className="bg-emerald-500/5 border border-emerald-500/20 p-8 rounded-3xl flex flex-col justify-center items-center text-center">
                                     <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
                                         <MessageSquare className="text-emerald-500" size={32} />
