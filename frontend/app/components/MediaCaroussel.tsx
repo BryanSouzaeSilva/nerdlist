@@ -18,9 +18,10 @@ interface MediaCarouselProps {
     items: MediaItem[];
     colorClass: string;
     userList?: UserListItem[];
+    priority?: boolean;
 }
 
-export default function MediaCarousel({ title, items = [], colorClass, userList = [] }: MediaCarouselProps) {
+export default function MediaCarousel({ title, items = [], colorClass, userList = [], priority = false}: MediaCarouselProps) {
     const carouselRef = useRef<HTMLDivElement>(null);
 
     const scroll = (direction: "left" | "right") => {
@@ -45,7 +46,7 @@ export default function MediaCarousel({ title, items = [], colorClass, userList 
             </button>
 
             <div ref={carouselRef} className="flex gap-6 overflow-x-auto overflow-y-hidden pb-8 pt-4 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth">
-                {items?.map((item) => {
+                {items?.map((item, index) => {
                     const isGame = item.type === "GAME";
                     const isSeries = item.type === "SERIES";
                     const isAnime = item.type === "ANIME";
@@ -68,10 +69,11 @@ export default function MediaCarousel({ title, items = [], colorClass, userList 
                                     fill
                                     className="object-cover"
                                     sizes="(max-width: 768px) 180px, 220px"
+                                    priority={priority && index <= 4}
                                 />
                                 <div className="absolute inset-0 bg-linear-to-t from-neutral-950/90 via-neutral-950/20 to-transparent opacity-80 group-hover/card:opacity-100 transition-opacity" />
                                 
-                                <SavedBadge id={item.id} type={item.type} initialStatus={savedInfo?.status} />
+                                <SavedBadge type={item.type} status={savedInfo?.status} />
                             </div>
 
                             <div className="absolute bottom-0 p-4 w-full">

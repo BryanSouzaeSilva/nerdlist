@@ -42,9 +42,15 @@ export async function saveReview(mediaId: string, type: string, rating: number, 
 }
 
 export async function getMediaReviews(mediaId: string, type: string) {
-    return await prisma.review.findMany({
-        where: { mediaId, type },
-        include: { user: { select: { name: true, image: true } } },
-        orderBy: { createdAt: 'desc' }
-    });
+    try {
+        return await prisma.review.findMany({
+            where: { mediaId, type },
+            include: { user: { select: { name: true, image: true } } },
+            orderBy: { createdAt: 'desc' }
+        });
+    } catch (error) {
+        console.error("Erro ao buscar reviews (o banco pode ter fechado a conexão):", error);
+        // Retorna um array vazio para a página do filme não quebrar!
+        return [];
+    }
 }

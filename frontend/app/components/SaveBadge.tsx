@@ -1,55 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { UserListStatus } from "../types/media-item";
-import { getUserList } from "../actions/list";
 
 interface SavedBadgeProps {
-    id: number | string;
     type: string;
-    initialStatus?: string | null;
+    status?: string | null;
 }
 
-export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps) {
-    const [fetchedStatus, setFetchedStatus] = useState<UserListStatus | null>(null);
+export default function SavedBadge({ type, status }: SavedBadgeProps) {
+    if (!status) return null;
 
-    const activeStatus = initialStatus !== undefined
-        ? (initialStatus as UserListStatus | null)
-        : fetchedStatus;
+    const activeStatus = status as UserListStatus;
 
-    useEffect(() => {
-        if (initialStatus !== undefined) return;
-
-        let isSubscribed = true;
-
-        const fetchStatus = async () => {
-            try {
-                const { items } = await getUserList();
-                if (!isSubscribed) return;
-
-                const existingItem = items.find(
-                    (i) => String(i.mediaId) === String(id) && i.type === type
-                );
-
-                if (existingItem) {
-                    setFetchedStatus(existingItem.status as UserListStatus);
-                }
-            } catch (error) {
-                console.error("Erro ao carregar badge:", error);
-            }
-        };
-
-        fetchStatus();
-
-        return () => {
-            isSubscribed = false;
-        };
-    }, [id, type, initialStatus]);
-
-    if (!activeStatus) return null;
-
-    const getStatusLabel = (status: UserListStatus, mediaType: string) => {
-        if (status === 'IN_PROGRESS') {
+    const getStatusLabel = (activeStatus: UserListStatus, mediaType: string) => {
+        if (activeStatus === 'IN_PROGRESS') {
             if (mediaType === 'GAME') return 'Jogando';
             if (mediaType === 'MANGA') return 'Lendo';
             return 'Assistindo';
@@ -60,11 +24,11 @@ export default function SavedBadge({ id, type, initialStatus }: SavedBadgeProps)
             'COMPLETED': 'Concluído',
             'DROPPED': 'Dropado'
         };
-        return map[status];
+        return map[activeStatus];
     };
 
-    const getBadgeStyle = (status: UserListStatus) => {
-        switch (status) {
+    const getBadgeStyle = (activeStatus: UserListStatus) => {
+        switch (activeStatus) {
             case 'IN_PROGRESS': return 'bg-blue-500/80 border-blue-400/50';
             case 'PLAN_TO_WATCH': return 'bg-emerald-500/80 border-emerald-400/50';
             case 'COMPLETED': return 'bg-purple-500/80 border-purple-400/50';

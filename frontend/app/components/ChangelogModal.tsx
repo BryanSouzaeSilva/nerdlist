@@ -7,7 +7,7 @@ export default function ChangelogModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
-    const VERSION_KEY = "nerdlist_changelog_v0.2";
+    const VERSION_KEY = "nerdlist_changelog_v0.2.1";
     const SESSION_KEY = "nerdlist_session_viewed";
 
     useEffect(() => {
@@ -38,7 +38,7 @@ export default function ChangelogModal() {
             <div>
                 <div className="flex items-center gap-2 text-neutral-950 bg-white/20 w-fit px-3 py-1 rounded-full mb-2">
                 <Sparkles size={14} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Atualização v0.2</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Atualização v0.2.1</span>
                 </div>
                 <h2 className="text-2xl font-black text-white tracking-tighter">A Fundação Adaptativa</h2>
             </div>
@@ -54,10 +54,9 @@ export default function ChangelogModal() {
                 </h3>
                 <ul className="space-y-3">
                 {[
-                    "Design Adaptativo (Experiência Mobile estilo App)",
-                    "Novo sistema de Abas no Perfil (Coleção, Stats, Reviews)",
-                    "Timeline de Reviews com integração ao seu cofre",
-                    "Busca Mobile Otimizada e Header Inteligente"
+                    "Correção de bugs no modal de status",
+                    "Tela de erro mais sugestiva e amigável ao abrir uma mídia",
+                    "Banco de dados está no ar novamente, com mais estabilidade",
                 ].map((item, i) => (
                     <li key={i} className="flex items-start gap-3 text-sm text-neutral-300 font-medium">
                     <ChevronRight size={16} className="text-emerald-500 mt-0.5 shrink-0" />
@@ -69,21 +68,24 @@ export default function ChangelogModal() {
 
             <div className="bg-white/5 border border-white/5 p-5 rounded-2xl space-y-3">
                 <h3 className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
-                <Rocket size={14} /> Próxima Sprint (v0.3)
+                    <Rocket size={14} /> Próxima Sprint (v0.3)
                 </h3>
                 <ul className="space-y-2">
-                <li className="text-xs text-neutral-400 leading-relaxed font-medium">
-                    <span className="text-white font-bold">Página de Mídia Renovada:</span> Novo layout em abas fluídas (Sobre, Relacionados, Músicas e Técnico).
-                </li>
-                <li className="text-xs text-neutral-400 leading-relaxed font-medium">
-                    <span className="text-white font-bold">Onde Assistir & Rating:</span> Saiba em qual streaming assistir e a classificação indicativa nacional.
-                </li>
-                <li className="text-xs text-neutral-400 leading-relaxed font-medium">
-                    <span className="text-white font-bold">Trilhas Sonoras:</span> Lista de Openings e Endings de animes em formato de player de música.
-                </li>
-                <li className="text-xs text-neutral-400 leading-relaxed font-medium">
-                    <span className="text-white font-bold">Área Técnica:</span> Requisitos de PC para jogos, estúdios de animação e diretores.
-                </li>
+                    <li className="text-xs text-neutral-400 leading-relaxed font-medium">
+                        <span className="text-white font-bold">Página de Mídia Renovada:</span> Novo layout em abas fluídas (Sobre, Relacionados, Músicas e Técnico).
+                    </li>
+                    <li className="text-xs text-neutral-400 leading-relaxed font-medium">
+                        <span className="text-white font-bold">Onde Assistir & Rating:</span> Saiba em qual streaming assistir e a classificação indicativa nacional.
+                    </li>
+                    <li className="text-xs text-neutral-400 leading-relaxed font-medium">
+                        <span className="text-white font-bold">Trilhas Sonoras:</span> Lista de Openings e Endings de animes em formato de player de música.
+                    </li>
+                    <li className="text-xs text-neutral-400 leading-relaxed font-medium">
+                        <span className="text-white font-bold">Área Técnica:</span> Requisitos de PC para jogos, estúdios de animação e diretores.
+                    </li>
+                    <li className="text-xs text-neutral-400 leading-relaxed font-medium">
+                        <span className="text-white font-bold">Correções:</span> Implantação de um sistema de Logs e Testes automáticos.
+                    </li>
                 </ul>
             </div>
 
