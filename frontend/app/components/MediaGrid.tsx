@@ -57,7 +57,7 @@ export default function MediaGrid({ items, userList = [] }: MediaGridProps) {
                             />
                             <div className="absolute inset-0 bg-linear-to-t from-neutral-950/90 via-neutral-950/20 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
                             
-                            <SavedBadge id={item.id} type={item.type} initialStatus={savedInfo?.status} />
+                            <SavedBadge type={item.type} status={savedInfo?.status} />
                         </div>
 
                         <div className="absolute bottom-0 p-3 w-full">
