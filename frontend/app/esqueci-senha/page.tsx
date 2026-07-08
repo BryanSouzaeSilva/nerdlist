@@ -10,19 +10,31 @@ export default function ForgotPasswordPage() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
-    async function handleSubmit(formData: FormData) {
+    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
         setLoading(true);
         setError("");
         setMessage("");
 
-        const res = await generateResetToken(formData);
+        const formData = new FormData(e.currentTarget);
 
-        if (res?.error) {
-        setError(res.error);
-        } else {
-        setMessage("Se o e-mail existir em nosso sistema, você receberá um link de recuperação (Olhe o terminal do VS Code!).");
+        try {
+            const res = await generateResetToken(formData);
+
+            if (res?.error) {
+                setError(res.error);
+            } else {
+                setMessage("Se o e-mail existir em nosso sistema, você receberá um link de recuperação (Olhe o terminal do VS Code!).");
+            }
+        } catch (err) {
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("Ocorreu um erro inesperado na aplicação. Tente novamente.");
+            }
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     return (
@@ -42,17 +54,17 @@ export default function ForgotPasswordPage() {
             </div>
 
             {error && (
-            <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-6 text-center">
+            <div className="bg-red-500/10 border border-red-500/50 text-red-500 text-sm p-3 rounded-lg mb-6 text-center animate-in fade-in">
                 {error}
             </div>
             )}
 
             {message ? (
-            <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-500 text-sm p-4 rounded-lg mb-6 text-center font-medium">
+            <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-500 text-sm p-4 rounded-lg mb-6 text-center font-medium animate-in fade-in">
                 {message}
             </div>
             ) : (
-            <form action={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">E-mail</label>
                 <div className="relative mt-1">
@@ -61,7 +73,7 @@ export default function ForgotPasswordPage() {
                 </div>
                 </div>
 
-                <button disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black py-3.5 rounded-lg transition-all uppercase tracking-widest mt-6 flex items-center justify-center disabled:opacity-50">
+                <button type="submit" disabled={loading} className="w-full bg-emerald-500 hover:bg-emerald-400 text-neutral-950 font-black py-3.5 rounded-lg transition-all uppercase tracking-widest mt-6 flex items-center justify-center disabled:opacity-50">
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Recuperar Senha"}
                 </button>
             </form>
