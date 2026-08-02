@@ -3,6 +3,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { MediaItem } from '../shared/interfaces/media-item.interface';
+interface TmdbProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+}
 
 interface TmdbMovie {
   id: number;
@@ -17,6 +22,25 @@ interface TmdbMovie {
   genres?: { id: number; name: string }[];
   runtime?: number;
   number_of_episodes?: number;
+  release_dates?: {
+    results: {
+      iso_3166_1: string;
+      release_dates: { certification: string }[];
+    }[];
+  };
+  content_ratings?: { results: { iso_3166_1: string; rating: string }[] };
+  'watch/providers'?: {
+    results: {
+      BR?: {
+        flatrate?: TmdbProvider[];
+        rent?: TmdbProvider[];
+        buy?: TmdbProvider[];
+      };
+    };
+  };
+  recommendations?: { results: TmdbMovie[] };
+  production_companies?: Array<{ name: string }>;
+  status?: string;
 }
 
 interface TmdbResponse {
@@ -34,6 +58,14 @@ interface RawgGame {
   description_raw?: string;
   description?: string;
   genres?: { name: string }[];
+  esrb_rating?: { id: number; slug: string; name: string } | null;
+  stores?: Array<{ store: { id: number; name: string; slug: string } }>;
+  platforms?: Array<{
+    platform: { name: string };
+    requirements_en?: { minumum?: string; recommended?: string };
+  }>;
+  developers?: Array<{ name: string }>;
+  publishers?: Array<{ name: string }>;
 }
 
 interface RawgMovieResponse {
@@ -73,6 +105,11 @@ interface JikanItem {
   trailer?: {
     youtube_id: string;
   };
+  rating?: string;
+  studios?: Array<{ name: string }>;
+  demographics?: Array<{ name: string }>;
+  themes?: Array<{ name: string }>;
+  authors?: Array<{ name: string }>;
 }
 
 interface JikanCastMember {
@@ -313,8 +350,58 @@ export class MoviesService {
           }
         }
 
+        const ageRating = this.mapJikanToBrRating(item.rating);
+
         const rawDate =
           typeUpper === 'ANIME' ? item.aired?.from : item.published?.from;
+
+        let similar: any[] = [];
+        try {
+          const recRes = await firstValueFrom(
+            this.httpService.get<{ data: Array<{ entry: JikanItem }> }>(
+              `https://api.jikan.moe/v4/${resource}/${id}/recommendations`,
+            ),
+          );
+          similar = (recRes.data.data?.slice(0, 10) || []).map((r) => ({
+            id: r.entry.mal_id,
+            title: r.entry.title,
+            posterUrl: r.entry.images?.jpg?.large_image_url || '',
+            releaseDate: '',
+            rating: 0,
+          }));
+        } catch {
+          console.warn(`Recomendações Indisponíveis para Jikan ID ${id}`);
+        }
+
+        let songs: { openings: string[]; endings: string[] } = {
+          openings: [],
+          endings: [],
+        };
+        if (typeUpper === 'ANIME') {
+          try {
+            const themesRes = await firstValueFrom(
+              this.httpService.get<{
+                data: { openings: string[]; endings: string[] };
+              }>(`https://api.jikan.moe/v4/anime/${id}/themes`),
+            );
+            songs = {
+              openings: themesRes.data.data?.openings || [],
+              endings: themesRes.data.data?.endings || [],
+            };
+          } catch {
+            console.warn(`Músicas indisponíveis para Anime ID ${id}`);
+          }
+        }
+
+        const technical = {
+          studios:
+            item.studios?.map((s) => s.name) ||
+            item.authors?.map((a) => a.name) ||
+            [],
+          demographics: item.demographics?.map((d) => d.name) || [],
+          themes: item.themes?.map((t) => t.name) || [],
+          status: item.status || 'Desconhecido',
+        };
 
         return {
           id: item.mal_id,
@@ -336,7 +423,11 @@ export class MoviesService {
           synopsis: item.synopsis || 'Sinopse não disponível.',
           trailerUrl: item.trailer?.youtube_id || '',
           cast,
-        };
+          ageRating,
+          similar,
+          songs,
+          technical,
+        } as unknown as MediaItem;
       } catch {
         throw new NotFoundException(`${typeUpper} não encontrado no Jikan`);
       }
@@ -345,22 +436,74 @@ export class MoviesService {
     if (typeUpper === 'GAME') {
       const apiKey = this.configService.get<string>('RAWG_API_KEY');
       const apiUrl = this.configService.get<string>('RAWG_API_URL');
+
       try {
-        const [detailsRes, moviesRes] = await Promise.all([
+        const [detailsRes, moviesRes, seriesRes] = await Promise.all([
           firstValueFrom(
             this.httpService.get<RawgGame>(`${apiUrl}/games/${id}`, {
               params: { key: apiKey },
+              timeout: 5000,
             }),
-          ),
+          ).catch(() => null),
+
           firstValueFrom(
             this.httpService.get<RawgMovieResponse>(
               `${apiUrl}/games/${id}/movies`,
-              { params: { key: apiKey } },
+              { params: { key: apiKey }, timeout: 5000 },
             ),
-          ),
+          ).catch(() => ({ data: { results: [] } })),
+
+          firstValueFrom(
+            this.httpService.get<RawgResponse>(
+              `${apiUrl}/games/${id}/game-series`,
+              { params: { key: apiKey }, timeout: 5000 },
+            ),
+          ).catch(() => ({ data: { results: [] } })),
         ]);
+
+        if (!detailsRes || !detailsRes.data) {
+          throw new NotFoundException(
+            `Jogo indisponível ou não encontrado na RAWG`,
+          );
+        }
+
         const data = detailsRes.data;
-        const trailer = moviesRes.data.results[0]?.data.max || '';
+
+        const trailer =
+          moviesRes?.data?.results && moviesRes.data.results.length > 0
+            ? moviesRes.data.results[0]?.data?.max || ''
+            : '';
+
+        const ageRating = this.mapEsrbToBrRating(data.esrb_rating?.slug);
+
+        const watchProviders =
+          data.stores?.map((s) => ({
+            providerId: s.store.id,
+            name: s.store.name,
+            logoPath: '',
+          })) || [];
+
+        // Mapeamento corrigido dos jogos relacionados
+        const similar = (seriesRes?.data?.results?.slice(0, 10) || []).map(
+          (g) => ({
+            id: g.id,
+            title: g.name,
+            type: 'GAME',
+            posterUrl: g.background_image || '',
+            releaseDate: g.released || '',
+            rating: g.rating ? g.rating * 2 : 0,
+          }),
+        );
+
+        const pcPlatform = data.platforms?.find(
+          (p) => p.platform.name === 'PC',
+        );
+        const technical = {
+          developers: data.developers?.map((d) => d.name) || [],
+          publishers: data.publishers?.map((p) => p.name) || [],
+          pcRequirements: pcPlatform?.requirements_en || null,
+        };
+
         return {
           id: data.id,
           source: 'RAWG',
@@ -383,9 +526,14 @@ export class MoviesService {
             'Sinopse não disponível.',
           trailerUrl: trailer,
           cast: [],
-        };
-      } catch {
-        throw new NotFoundException(`Jogo não encontrado`);
+          ageRating,
+          watchProviders,
+          similar,
+          technical,
+        } as unknown as MediaItem;
+      } catch (error) {
+        if (error instanceof NotFoundException) throw error;
+        throw new NotFoundException(`Jogo indisponível temporariamente`);
       }
     }
 
@@ -420,7 +568,8 @@ export class MoviesService {
           params: {
             api_key: apiKey,
             language: 'pt-BR',
-            append_to_response: 'videos,credits',
+            append_to_response:
+              'videos,credits,watch/providers,release_dates,content_ratings,recommendations',
           },
         }),
       );
@@ -439,6 +588,64 @@ export class MoviesService {
             ? `https://image.tmdb.org/t/p/w185${person.profile_path}`
             : '',
         })) || [];
+
+      // 1. Lógica para extrair a Classificação Indicativa BRASILEIRA
+      let ageRating = 'Livre';
+      if (resourceType === 'movie' && data.release_dates) {
+        const brRelease = data.release_dates.results?.find(
+          (r) => r.iso_3166_1 === 'BR',
+        );
+        if (
+          brRelease &&
+          brRelease.release_dates.length > 0 &&
+          brRelease.release_dates[0].certification
+        ) {
+          ageRating = brRelease.release_dates[0].certification;
+        }
+      } else if (resourceType === 'tv' && data.content_ratings) {
+        const brRating = data.content_ratings.results?.find(
+          (r) => r.iso_3166_1 === 'BR',
+        );
+        if (brRating && brRating.rating) {
+          ageRating = brRating.rating;
+        }
+      }
+
+      // 2. Lógica para extrair os Provedores de Streaming no BRASIL (Ex: Netflix, Max)
+      const brProviders = data['watch/providers']?.results?.BR;
+      const watchProviders: {
+        providerId: number;
+        name: string;
+        logoPath: string;
+      }[] = [];
+
+      if (brProviders?.flatrate) {
+        watchProviders.push(
+          ...brProviders.flatrate.map((p) => ({
+            providerId: p.provider_id,
+            name: p.provider_name,
+            logoPath: `https://image.tmdb.org/t/p/original${p.logo_path}`,
+          })),
+        );
+      }
+
+      const similar = (data.recommendations?.results?.slice(0, 10) || []).map(
+        (rec: TmdbMovie) => ({
+          id: rec.id,
+          title: rec.title || rec.name || 'Título Desconhecido',
+          type: mappedType,
+          posterUrl: rec.poster_path
+            ? `https://image.tmdb.org/t/p/w500${rec.poster_path}`
+            : '',
+          releaseDate: rec.release_date || rec.first_air_date || '',
+          rating: rec.vote_average || 0, // Corrigido para vote_average (com 'e')
+        }),
+      );
+
+      const technical = {
+        studios: data.production_companies?.map((c) => c.name) || [],
+        status: data.status || 'Desconhecido',
+      };
 
       return {
         id: data.id,
@@ -468,7 +675,12 @@ export class MoviesService {
         synopsis: data.overview,
         trailerUrl: trailer ? trailer.key : '',
         cast,
-      };
+        // Injetando os novos dados no retorno
+        ageRating,
+        watchProviders,
+        similar,
+        technical,
+      } as unknown as MediaItem; // Conversão segura para satisfazer a interface
     } catch {
       throw new NotFoundException(`Item com ID ${id} não encontrado no TMDB`);
     }
@@ -702,6 +914,29 @@ export class MoviesService {
       if (a.type !== 'GAME' && b.type === 'GAME') return -1;
       return 0;
     });
+  }
+
+  private mapEsrbToBrRating(esrbSlug?: string): string {
+    if (!esrbSlug) return 'Livre';
+    const slug = esrbSlug.toLowerCase();
+    if (slug.includes('everyone-10')) return '10';
+    if (slug.includes('everyone')) return 'Livre';
+    if (slug.includes('teen')) return '12';
+    if (slug.includes('mature')) return '16';
+    if (slug.includes('adults')) return '18';
+    return 'Livre';
+  }
+
+  private mapJikanToBrRating(rating?: string): string {
+    if (!rating) return 'Livre';
+    const r = rating.toLowerCase();
+    if (r.includes('g -') || r.includes('all ages')) return 'Livre';
+    if (r.includes('pg -') || r.includes('children')) return '10';
+    if (r.includes('pg-13') || r.includes('teens')) return '14';
+    if (r.includes('r - 17') || r.includes('violence')) return '16';
+    if (r.includes('r+') || r.includes('rx') || r.includes('hentai'))
+      return '18';
+    return '12';
   }
 
   private slugify(text: string): string {

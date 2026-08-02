@@ -1,10 +1,10 @@
-"use client"; // Arquivos de erro PRECISAM ser Client Components
+"use client";
 
 import { useEffect } from "react";
+import { AlertCircle, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { AlertTriangle, RefreshCcw, Home } from "lucide-react";
 
-export default function GlobalError({
+export default function ErrorBoundary({
     error,
     reset,
 }: {
@@ -12,46 +12,40 @@ export default function GlobalError({
     reset: () => void;
 }) {
     useEffect(() => {
-        // No futuro (etapa de Logs), é aqui que enviaremos o erro para o Sentry/Datadog
-        console.error("NerdList capturou um erro fatal:", error);
+        // Opcional: Aqui nós enviamos o erro pro Sentry, lembra?
+        console.error(error);
     }, [error]);
 
     return (
-        <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-500">
-            <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
-                <AlertTriangle size={48} className="text-red-500" />
-            </div>
-            
-            <h1 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
-                Ops! Um erro inesperado ocorreu.
-            </h1>
-            
-            <p className="text-neutral-400 max-w-md mx-auto mb-8 text-sm md:text-base leading-relaxed">
-                Tivemos um problema de comunicação com nossos servidores ou com a base de dados de mídias. Não se preocupe, o problema não é com você.
-            </p>
+        <main className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4">
+            <div className="bg-neutral-900 border border-red-500/20 rounded-3xl p-8 md:p-12 max-w-lg w-full text-center shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-orange-500" />
+                
+                <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <AlertCircle className="w-10 h-10 text-red-500" />
+                </div>
+                
+                <h1 className="text-2xl md:text-3xl font-black text-white mb-4">Algo deu errado!</h1>
+                <p className="text-gray-400 mb-8 leading-relaxed">
+                    Não conseguimos carregar as informações desta mídia. Pode ser uma falha de conexão ou os dados não estão mais disponíveis.
+                </p>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                    onClick={() => reset()}
-                    className="flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-black px-6 py-3 rounded-xl font-bold transition-all"
-                >
-                    <RefreshCcw size={18} />
-                    Tentar Novamente
-                </button>
-
-                <Link
-                    href="/"
-                    className="flex items-center justify-center gap-2 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-white px-6 py-3 rounded-xl font-bold transition-all"
-                >
-                    <Home size={18} />
-                    Voltar ao Início
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button
+                        onClick={() => reset()} // <--- MÁGICA AQUI: Recarrega o componente!
+                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition-all"
+                    >
+                        <RotateCcw size={18} />
+                        Tentar Novamente
+                    </button>
+                    <Link
+                        href="/"
+                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold transition-all"
+                    >
+                        Voltar ao Início
+                    </Link>
+                </div>
             </div>
-
-            <div className="mt-12 p-4 bg-neutral-900/50 border border-neutral-800 rounded-lg max-w-lg w-full text-left overflow-hidden">
-                <p className="text-[10px] text-neutral-500 font-mono uppercase tracking-widest mb-2">Log do Erro:</p>
-                <p className="text-xs text-red-400 font-mono break-words">{error.message || "Erro desconhecido no servidor"}</p>
-            </div>
-        </div>
+        </main>
     );
 }
