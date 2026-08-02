@@ -7,7 +7,6 @@ export default function ChangelogModal() {
     const [isOpen, setIsOpen] = useState(false);
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
-    // Chave da versão oficial v0.3.0
     const VERSION_KEY = "nerdlist_changelog_v0.3.0";
     const SESSION_KEY = "nerdlist_session_viewed_v0.3.0";
 
@@ -33,59 +32,64 @@ export default function ChangelogModal() {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-neutral-900 border border-white/10 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            {/* Truque Mágico aqui: max-h-[90vh] para não estourar a tela.
+                [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] oculta a barra feia mas mantém a rolagem!
+            */}
+            <div className="bg-neutral-900 border border-white/10 w-full max-w-lg max-h-[90vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300">
                 
-                {/* Cabeçalho */}
-                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 flex justify-between items-start">
+                {/* Cabeçalho - Mais compacto no mobile */}
+                <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-5 sm:p-6 flex justify-between items-start sticky top-0 z-10">
                     <div>
-                        <div className="flex items-center gap-2 text-neutral-950 bg-white/20 w-fit px-3 py-1 rounded-full mb-2">
-                            <Star size={14} className="fill-neutral-950" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Atualização v0.3.0</span>
+                        <div className="flex items-center gap-2 text-neutral-950 bg-white/20 w-fit px-3 py-1 rounded-full mb-1 sm:mb-2">
+                            <Star size={12} className="fill-neutral-950" />
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">Atualização v0.3.0</span>
                         </div>
-                        <h2 className="text-2xl font-black text-white tracking-tighter">A Maturidade Multimídia</h2>
+                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tighter">A Maturidade Multimídia</h2>
                     </div>
-                    <button onClick={handleClose} className="text-white/50 hover:text-white transition-colors">
-                        <X size={24} />
+                    <button onClick={handleClose} className="text-white/50 hover:text-white transition-colors p-1">
+                        <X size={20} />
                     </button>
                 </div>
 
-                <div className="p-8 space-y-8">
+                {/* Corpo do Modal - Paddings e margens reduzidas no mobile */}
+                <div className="p-5 sm:p-8 space-y-6 sm:space-y-8">
+                    
                     {/* O que mudou */}
-                    <div className="space-y-4">
-                        <h3 className="text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
+                    <div className="space-y-3 sm:space-y-4">
+                        <h3 className="text-[11px] sm:text-xs font-black text-emerald-500 uppercase tracking-widest flex items-center gap-2">
                             <Rocket size={14} /> Já disponível
                         </h3>
-                        <ul className="space-y-3">
+                        <ul className="space-y-2 sm:space-y-3">
                             {[
-                                "Classificação Indicativa: Padrão brasileiro de idades unificado e com cores para Filmes, Séries, Animes e Jogos.",
-                                "Onde Assistir & Comprar: Integração inteligente exibindo plataformas de streaming oficiais e lojas virtuais de jogos.",
-                                "Aba Relacionados: Algoritmo de recomendação ativado! Descubra sequências e franquias das suas obras favoritas.",
-                                "Aba Músicas: Integração com aberturas oficiais de Animes e atalhos de busca de OST no Spotify e YouTube.",
-                                "Ficha Técnica Profissional: Requisitos de PC para jogos, estúdios, status de lançamento e demografias otimizadas.",
-                                "Sistema Anti-Quedas: O backend agora é resiliente e blinda o NerdList caso as APIs externas (como a RAWG) saiam do ar.",
+                                "Classificação Indicativa: Padrão brasileiro unificado e com cores.",
+                                "Onde Assistir & Comprar: Plataformas de streaming e lojas de jogos.",
+                                "Aba Relacionados: Descubra sequências e franquias das suas obras.",
+                                "Aba Músicas: Aberturas de Animes e atalhos para OST (Spotify/YouTube).",
+                                "Ficha Técnica: Requisitos de PC para jogos, estúdios e status.",
+                                "Sistema Anti-Quedas: Backend resiliente que blinda o NerdList se APIs caírem.",
                             ].map((item, i) => (
-                                <li key={i} className="flex items-start gap-3 text-sm text-neutral-300 font-medium leading-relaxed">
-                                    <ChevronRight size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                                <li key={i} className="flex items-start gap-2 sm:gap-3 text-xs sm:text-sm text-neutral-300 font-medium leading-snug sm:leading-relaxed">
+                                    <ChevronRight size={14} className="text-emerald-500 mt-0.5 shrink-0" />
                                     {item}
                                 </li>
                             ))}
                         </ul>
                     </div>
 
-                    {/* Próxima Sprint */}
-                    <div className="bg-white/5 border border-white/5 p-5 rounded-2xl space-y-3">
+                    {/* Próxima Sprint - Oculto em telas muito pequenas para economizar espaço */}
+                    <div className="hidden sm:block bg-white/5 border border-white/5 p-5 rounded-2xl space-y-3">
                         <h3 className="text-xs font-black text-amber-500 uppercase tracking-widest flex items-center gap-2">
                             <Clock size={14} /> Na mira (Próxima Etapa)
                         </h3>
                         <p className="text-sm text-neutral-400 italic pl-6">
-                            Monitoramento avançado de falhas em tempo real (Sentry) e Testes Automatizados da interface (Jest).
+                            Monitoramento de falhas em tempo real (Sentry) e Testes (Jest).
                         </p>
                     </div>
 
                     {/* Rodapé de Ações */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/5">
-                        <label className="flex items-center gap-3 cursor-pointer group w-full sm:w-auto">
-                            <div className="relative">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 sm:pt-4 border-t border-white/5">
+                        <label className="flex items-center justify-center sm:justify-start gap-3 cursor-pointer group w-full sm:w-auto">
+                            <div className="relative flex-shrink-0">
                                 <input
                                     type="checkbox"
                                     className="peer hidden"
@@ -95,14 +99,14 @@ export default function ChangelogModal() {
                                 <div className="w-5 h-5 border-2 border-neutral-700 rounded-md peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all" />
                                 <CheckCircle2 className="absolute inset-0 text-neutral-950 scale-0 peer-checked:scale-75 transition-transform mx-auto" />
                             </div>
-                            <span className="text-xs text-neutral-500 font-bold group-hover:text-neutral-300 transition-colors">
+                            <span className="text-[11px] sm:text-xs text-neutral-500 font-bold group-hover:text-neutral-300 transition-colors">
                                 Não mostrar novamente
                             </span>
                         </label>
 
                         <button
                             onClick={handleClose}
-                            className="w-full sm:w-auto bg-white text-neutral-950 px-8 py-3 rounded-xl font-black text-sm hover:bg-emerald-500 transition-all active:scale-95 uppercase tracking-wider shadow-lg"
+                            className="w-full sm:w-auto bg-white text-neutral-950 px-8 py-3 sm:py-3.5 rounded-xl font-black text-xs sm:text-sm hover:bg-emerald-500 transition-all active:scale-95 uppercase tracking-wider shadow-lg"
                         >
                             Incrível!
                         </button>

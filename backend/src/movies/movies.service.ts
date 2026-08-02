@@ -214,33 +214,41 @@ export class MoviesService {
     const apiKey = this.configService.get<string>('RAWG_API_KEY');
     const apiUrl = this.configService.get<string>('RAWG_API_URL');
 
-    const { data } = await firstValueFrom(
-      this.httpService.get<RawgResponse>(`${apiUrl}/games`, {
-        params: {
-          key: apiKey,
-          ordering: '-added',
-          page_size: 20,
-        },
-      }),
-    );
+    try {
+      const { data } = await firstValueFrom(
+        this.httpService.get<RawgResponse>(`${apiUrl}/games`, {
+          params: {
+            key: apiKey,
+            ordering: '-added',
+            page_size: 20,
+          },
+          timeout: 5000,
+        }),
+      );
 
-    return data.results.map((item) => ({
-      id: item.id,
-      source: 'RAWG',
-      type: 'GAME',
-      title: item.name || 'Título Desconecido',
-      slug: this.slugify(item.name || 'title'),
-      posterUrl: item.background_image || '',
-      backdropUrl: item.background_image || '',
-      releaseDate: item.released || '',
-      genres: item.genres
-        ? item.genres.map((g: { id: number; name: string }) => g.name)
-        : [],
-      status: 'RELEASED',
-      rating: item.rating ? item.rating * 2 : 0,
-      extend: { value: item.playtime || 0, unit: 'HOURS' },
-      synopsis: 'Sinopse completa disponível na página de detalhes',
-    }));
+      return data.results.map((item) => ({
+        id: item.id,
+        source: 'RAWG',
+        type: 'GAME',
+        title: item.name || 'Título Desconecido',
+        slug: this.slugify(item.name || 'title'),
+        posterUrl: item.background_image || '',
+        backdropUrl: item.background_image || '',
+        releaseDate: item.released || '',
+        genres: item.genres
+          ? item.genres.map((g: { id: number; name: string }) => g.name)
+          : [],
+        status: 'RELEASED',
+        rating: item.rating ? item.rating * 2 : 0,
+        extend: { value: item.playtime || 0, unit: 'HOURS' },
+        synopsis: 'Sinopse completa disponível na página de detalhes',
+      }));
+    } catch {
+      console.warn(
+        `RAWG API instável na Home. Ignorando jogos temporariamente.`,
+      );
+      return [];
+    }
   }
 
   async findAllAnimes(): Promise<MediaItem[]> {
